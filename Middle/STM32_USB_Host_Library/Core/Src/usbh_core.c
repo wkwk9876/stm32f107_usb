@@ -135,7 +135,18 @@ USBH_StatusTypeDef  USBH_Init(USBH_HandleTypeDef *phost, void (*pUsrFunc)(USBH_H
   phost->ClassNumber = 0;
 
   phost->Pipes = (__IO uint32_t *)USBH_malloc(USBH_MAX_PIPES_NBR * sizeof(uint32_t *));
+  if(NULL == phost->Pipes)
+  {
+  	USBH_ErrLog("Pipes USBH_malloc failed!\n");
+    return USBH_FAIL;
+  }
   phost->address = (uint8_t *)USBH_malloc(USBH_MAX_NUM_DEVICE * sizeof(uint8_t *));
+  if(NULL == phost->address)
+  {
+  	USBH_free((void *)phost->Pipes);
+  	USBH_ErrLog("Pipes USBH_malloc failed!\n");
+    return USBH_FAIL;
+  }
   memset((void *)phost->Pipes, 0, USBH_MAX_PIPES_NBR * sizeof(uint32_t *));
   memset(phost->address, 0, USBH_MAX_NUM_DEVICE * sizeof(uint8_t *));
   
@@ -160,9 +171,11 @@ USBH_StatusTypeDef  USBH_Init(USBH_HandleTypeDef *phost, void (*pUsrFunc)(USBH_H
 #if defined (USBH_PROCESS_STACK_SIZE)
   osThreadDef(USBH_Thread, USBH_Process_OS, USBH_PROCESS_PRIO, 0, USBH_PROCESS_STACK_SIZE);
 #else
-  osThreadDef(USBH_Thread, USBH_Process_OS, USBH_PROCESS_PRIO, 0, 16 * configMINIMAL_STACK_SIZE);
+  osThreadDef(USBH_Thread, USBH_Process_OS, USBH_PROCESS_PRIO, 0, 8 * configMINIMAL_STACK_SIZE);
 #endif  
   phost->thread = osThreadCreate (osThread(USBH_Thread), phost);
+  if(NULL == phost->thread)
+  	goto USBH_THREAD_FAIL;
 
   __PRINT_LOG__(__CRITICAL_LEVEL__, "create usb thread!(thread:0x%x)\r\n", phost->thread);
 #endif  
@@ -170,6 +183,15 @@ USBH_StatusTypeDef  USBH_Init(USBH_HandleTypeDef *phost, void (*pUsrFunc)(USBH_H
   /* Initialize low level driver */
   USBH_LL_Init(phost);
   return USBH_OK;
+
+USBH_THREAD_FAIL:
+  __PRINT_LOG__(__ERR_LEVEL__, "create usb thread FAILED !(thread:0x%x)\r\n", phost->thread);
+
+  USBH_free((void *)phost->address);
+
+  USBH_free((void *)phost->Pipes);
+
+  return USBH_FAIL;
 }
 
 /**
