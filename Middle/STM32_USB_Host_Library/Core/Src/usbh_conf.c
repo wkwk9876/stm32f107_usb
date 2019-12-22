@@ -46,17 +46,21 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef * hhcd)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /* Configure PowerSwitchOn pin */
   GPIO_InitStruct.Pin = GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* Configure ID pin */
   GPIO_InitStruct.Pin = GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin =      GPIO_PIN_9;
+  GPIO_InitStruct.Mode =     GPIO_MODE_OUTPUT_PP;    
+  GPIO_InitStruct.Pull =     GPIO_PULLUP;      
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* Enable USB OTG FS Clock */
   __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
@@ -383,11 +387,13 @@ USBH_StatusTypeDef USBH_LL_DriverVBUS(USBH_HandleTypeDef * phost, uint8_t state)
 {
   if (state == 0)
   {
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_SET);
+    printf("Vbus off\r\n");
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_RESET);
   }
   else
   {
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_RESET);
+    printf("Vbus on\r\n");
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_SET);
   }
 
   HAL_Delay(200);

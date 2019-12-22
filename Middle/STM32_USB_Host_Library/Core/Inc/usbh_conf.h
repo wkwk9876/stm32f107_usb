@@ -77,8 +77,8 @@
 #endif
 
 /* Memory management macros */   
-#define USBH_malloc               malloc
-#define USBH_free                 free
+#define USBH_malloc               pvPortMalloc //malloc
+#define USBH_free                 vPortFree //free
 #define USBH_memset               memset
 #define USBH_memcpy               memcpy
     

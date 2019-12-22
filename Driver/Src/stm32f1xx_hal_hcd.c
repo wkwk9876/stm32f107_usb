@@ -52,6 +52,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
+#include <stdio.h>
+#include <stdlib.h>
+
 
 /** @addtogroup STM32F1xx_HAL_Driver
   * @{
@@ -502,6 +505,8 @@ void HAL_HCD_IRQHandler(HCD_HandleTypeDef *hhcd)
       return;
     }
 
+	//printf("usb interrupt (0x%08x)\r\n", USB_ReadInterrupts((hhcd)->Instance));
+
     if (__HAL_HCD_GET_FLAG(hhcd, USB_OTG_GINTSTS_PXFR_INCOMPISOOUT))
     {
       /* Incorrect mode, acknowledge the interrupt */
@@ -565,6 +570,7 @@ void HAL_HCD_IRQHandler(HCD_HandleTypeDef *hhcd)
     /* Handle Host channel Interrupt */
     if (__HAL_HCD_GET_FLAG(hhcd, USB_OTG_GINTSTS_HCINT))
     {
+      //printf("Host channel Interrupt\r\n");
       interrupt = USB_HC_ReadInterrupt(hhcd->Instance);
       for (i = 0U; i < hhcd->Init.Host_channels; i++)
       {
@@ -1529,11 +1535,13 @@ static void HCD_Port_IRQHandler(HCD_HandleTypeDef *hhcd)
 {
   USB_OTG_GlobalTypeDef *USBx = hhcd->Instance;
   uint32_t USBx_BASE = (uint32_t)USBx;
-  __IO uint32_t hprt0, hprt0_dup;
+  __IO uint32_t hprt0, hprt0_dup;  
 
   /* Handle Host Port Interrupts */
   hprt0 = USBx_HPRT0;
   hprt0_dup = USBx_HPRT0;
+
+  printf("HCD_Port_IRQHandler 0x%08x\r\n", hprt0);
 
   hprt0_dup &= ~(USB_OTG_HPRT_PENA | USB_OTG_HPRT_PCDET | \
                  USB_OTG_HPRT_PENCHNG | USB_OTG_HPRT_POCCHNG);

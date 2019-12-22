@@ -149,18 +149,22 @@ USBH_StatusTypeDef  USBH_Init(USBH_HandleTypeDef *phost, void (*pUsrFunc)(USBH_H
   }
   
 #if (USBH_USE_OS == 1) 
-  
+
   /* Create USB Host Queue */
   osMessageQDef(USBH_Queue, 10, uint16_t);
   phost->os_event = osMessageCreate (osMessageQ(USBH_Queue), NULL); 
+
+  //__PRINT_LOG__(__CRITICAL_LEVEL__, "create usb message queue!(os_event:0x%x)\r\n", phost->os_event);
   
   /*Create USB Host Task */
 #if defined (USBH_PROCESS_STACK_SIZE)
   osThreadDef(USBH_Thread, USBH_Process_OS, USBH_PROCESS_PRIO, 0, USBH_PROCESS_STACK_SIZE);
 #else
-  osThreadDef(USBH_Thread, USBH_Process_OS, USBH_PROCESS_PRIO, 0, 128 * configMINIMAL_STACK_SIZE);
+  osThreadDef(USBH_Thread, USBH_Process_OS, USBH_PROCESS_PRIO, 0, 16 * configMINIMAL_STACK_SIZE);
 #endif  
   phost->thread = osThreadCreate (osThread(USBH_Thread), phost);
+
+  __PRINT_LOG__(__CRITICAL_LEVEL__, "create usb thread!(thread:0x%x)\r\n", phost->thread);
 #endif  
   
   /* Initialize low level driver */
@@ -608,6 +612,7 @@ USBH_StatusTypeDef  USBH_Process(USBH_HandleTypeDef *phost)
         }
         else
         {
+          phost->pActiveClass = NULL;
           phost->gState  = HOST_ABORT_STATE;
           USBH_UsrLog ("Device not supporting %s class.", phost->pActiveClass->Name);
         }
@@ -983,6 +988,17 @@ void  USBH_HandleSof  (USBH_HandleTypeDef *phost)
 void USBH_LL_PortEnabled (USBH_HandleTypeDef *phost)
 {
   phost->device.PortEnabled = 1U;
+  __PRINT_LOG__(__CRITICAL_LEVEL__, "PortEnabled\r\n");
+  if(phost->gState == HOST_DEV_WAIT_FOR_ATTACHMENT )
+  {
+    phost->gState = HOST_DEV_ATTACHED ;
+	USBH_UsrLog("USB Device reset success"); 
+  }
+
+#if (USBH_USE_OS == 1)
+	osMessagePut ( phost->os_event, USBH_PORT_EVENT, 0);
+#endif
+
 
   return;
 }
@@ -996,6 +1012,7 @@ void USBH_LL_PortEnabled (USBH_HandleTypeDef *phost)
 void USBH_LL_PortDisabled (USBH_HandleTypeDef *phost)
 {
   phost->device.PortEnabled = 0U;
+  __PRINT_LOG__(__CRITICAL_LEVEL__, "PortDisabled\r\n");
 
   /*printf("++++++++++++USBH_LL_PortDisabled+++++++++++\r\n");
 
@@ -1042,6 +1059,7 @@ USBH_StatusTypeDef  USBH_LL_Connect  (USBH_HandleTypeDef *phost)
   else if(phost->gState == HOST_DEV_WAIT_FOR_ATTACHMENT )
   {
     phost->gState = HOST_DEV_ATTACHED ;
+	USBH_UsrLog("USB Device reset success"); 
   }
 #if (USBH_USE_OS == 1)
   osMessagePut ( phost->os_event, USBH_PORT_EVENT, 0);
@@ -1147,6 +1165,8 @@ static void USBH_Children_Process_OS(volatile USBH_HandleTypeDef * phost)
 static void USBH_Process_OS(void const * argument)
 {
   osEvent event;
+
+  //__PRINT_LOG__(__CRITICAL_LEVEL__, "start USBH_Process_OS\r\n");
   
   for(;;)
   {

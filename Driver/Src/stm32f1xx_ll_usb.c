@@ -39,7 +39,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
-
+#include <stdio.h>
+#include <stdlib.h>
 /** @addtogroup STM32F1xx_LL_USB_DRIVER
   * @{
   */
@@ -1265,6 +1266,8 @@ HAL_StatusTypeDef USB_ResetPort(USB_OTG_GlobalTypeDef *USBx)
 
   __IO uint32_t hprt0 = 0U;
 
+  printf("Port reset!\r\n");
+
   hprt0 = USBx_HPRT0;
 
   hprt0 &= ~(USB_OTG_HPRT_PENA | USB_OTG_HPRT_PCDET |
@@ -1274,6 +1277,8 @@ HAL_StatusTypeDef USB_ResetPort(USB_OTG_GlobalTypeDef *USBx)
   HAL_Delay(100U);                                 /* See Note #1 */
   USBx_HPRT0 = ((~USB_OTG_HPRT_PRST) & hprt0);
   HAL_Delay(10U);
+
+  printf("Port reset completed!\r\n");
 
   return HAL_OK;
 }

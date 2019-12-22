@@ -76,6 +76,28 @@
          
          Please refer to MPU_Config() in main.c file.
  */
+#if defined ( __ICCARM__ ) /*!< IAR Compiler */
+  #pragma data_alignment=4   
+#endif
+__ALIGN_BEGIN ETH_DMADescTypeDef  DMARxDscrTab[ETH_RXBUFNB] __ALIGN_END;/* Ethernet Rx MA Descriptor */
+
+#if defined ( __ICCARM__ ) /*!< IAR Compiler */
+  #pragma data_alignment=4   
+#endif
+__ALIGN_BEGIN ETH_DMADescTypeDef  DMATxDscrTab[ETH_TXBUFNB] __ALIGN_END;/* Ethernet Tx DMA Descriptor */
+
+#if defined ( __ICCARM__ ) /*!< IAR Compiler */
+  #pragma data_alignment=4   
+#endif
+__ALIGN_BEGIN uint8_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __ALIGN_END; /* Ethernet Receive Buffer */
+
+#if defined ( __ICCARM__ ) /*!< IAR Compiler */
+  #pragma data_alignment=4   
+#endif
+__ALIGN_BEGIN uint8_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __ALIGN_END; /* Ethernet Transmit Buffer */
+
+#if 0
+
 #if defined ( __CC_ARM   )
 __ALIGN_BEGIN ETH_DMADescTypeDef  DMARxDscrTab[ETH_RXBUFNB] __ALIGN_END; /* Ethernet Rx DMA Descriptors */
 
@@ -100,6 +122,7 @@ __ALIGN_BEGIN  uint8_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __ALIGN_END; /* Eth
 __ALIGN_BEGIN  uint8_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __ALIGN_END; /* Ethernet Transmit Buffers */
 
 
+#endif
 
 #endif
 
@@ -124,13 +147,16 @@ static void ethernetif_input( void const * argument );
 void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 {
   GPIO_InitTypeDef GPIO_InitStruct;
+
+  /* Enable Peripheral clock */
+  __HAL_RCC_ETH_CLK_ENABLE();
   
   /* Enable GPIOs clocks */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_AFIO_CLK_ENABLE();
+  //__HAL_RCC_GPIOD_CLK_ENABLE();
+  //__HAL_RCC_AFIO_CLK_ENABLE();
 
 /* Ethernet pins configuration ************************************************/
   /*
@@ -174,14 +200,24 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 	
 	/* Configure PB15 */
     GPIO_InitStruct.Pin =  GPIO_PIN_15;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;   
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; 
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	/* LAN8742A_PHY_ADDRESS is 0 */
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_14,GPIO_PIN_RESET);
+	
+
+	/* Configure PB14 */
+	/*GPIO_InitStruct.Pin =  GPIO_PIN_14;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;   
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;   
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);*/
 
     /* Peripheral interrupt init */
     HAL_NVIC_SetPriority(ETH_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(ETH_IRQn);
 	
-	/* Enable Peripheral clock */
-    __HAL_RCC_ETH_CLK_ENABLE();
+	
 
 }
 
@@ -211,7 +247,12 @@ static void low_level_init(struct netif *netif)
 {
   uint8_t macaddress[6]= { MAC_ADDR0, MAC_ADDR1, MAC_ADDR2, MAC_ADDR3, MAC_ADDR4, MAC_ADDR5 };
   uint32_t regvalue = 0;
+  uint32_t ret;
 
+  /*HAL_GPIO_WritePin(GPIOB,GPIO_PIN_14,GPIO_PIN_RESET);
+  HAL_Delay(100);
+  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_14,GPIO_PIN_SET);
+  HAL_Delay(100);*/
   
   EthHandle.Instance = ETH;  
   EthHandle.Init.MACAddr = macaddress;
@@ -224,10 +265,15 @@ static void low_level_init(struct netif *netif)
   EthHandle.Init.PhyAddress = LAN8742A_PHY_ADDRESS;
   
   /* configure ethernet peripheral (GPIOs, clocks, MAC, DMA) */
-  if (HAL_ETH_Init(&EthHandle) == HAL_OK)
+  if ((ret = HAL_ETH_Init(&EthHandle)) == HAL_OK)
   {
     /* Set netif link flag */
     netif->flags |= NETIF_FLAG_LINK_UP;
+	printf("HAL_ETH_Init success ethernet link up!\r\n");
+  }
+  else
+  {
+    printf("HAL_ETH_Init failed!(ret:%d)\r\n", ret);
   }
   
   /* Initialize Tx Descriptors list: Chain Mode */

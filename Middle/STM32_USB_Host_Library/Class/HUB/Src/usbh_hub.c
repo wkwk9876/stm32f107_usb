@@ -264,7 +264,7 @@ static USBH_StatusTypeDef USBH_HUB_InterfaceInit (USBH_HandleTypeDef *phost)
 		interface = USBH_FindInterface(phost, 
 									   USB_HUB_CLASS, 
 									   0X00, 
-									   0x01);
+									   0x00);
 	}
 	else if(HIGH_SPEED_SINGLE_TT == phost->device.DevDesc.bDeviceProtocol)
 	{
@@ -862,7 +862,7 @@ static USBH_StatusTypeDef USBH_HUB_SOFProcess (USBH_HandleTypeDef *phost)
 		//printf("chnum %d sof:%d\r\n", HUB_Handle->CommItf.NotifPipe, HUB_Handle->sof_num);
 		HUB_Handle->sof_num = 0;
 		if(HUB_REQ_SCAN_PORT == HUB_Handle->ctl_state)
-		HUB_Handle->ctl_state = HUB_REQ_SCAN_PORT_WAIT;
+			HUB_Handle->ctl_state = HUB_REQ_SCAN_PORT_WAIT;
 	}
 
 	/*switch (HUB_Handle->ctl_state)
