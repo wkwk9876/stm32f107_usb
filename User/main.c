@@ -18,6 +18,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include <string.h>
 #include "cmsis_os.h"
 
 #include "main.h"
@@ -42,6 +43,8 @@
 
 /* Private functions ---------------------------------------------------------*/
 
+#include "test_lwip.h"
+extern struct TX_buffer_manage * txbuf;
 
 static void TEST_Task(void const *argument)
 {
@@ -49,7 +52,7 @@ static void TEST_Task(void const *argument)
 
 	while(1)
 	{
-		__PRINT_LOG__(__CRITICAL_LEVEL__, "I am live!(%d)\r\n", i++);
+		__PRINT_LOG__(__CRITICAL_LEVEL__, "I am live!(%d)\r\n", i++);		
 		HAL_Delay(1000);
 	}	
 }
@@ -89,10 +92,10 @@ int main(void)
 	osThreadDef(TEST_Task, TEST_Task, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
 	osThreadCreate(osThread(TEST_Task), NULL);
 
-	osThreadDef(start_usbh_thread, start_usbh_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
-    osThreadCreate(osThread(start_usbh_thread), NULL);
+	//osThreadDef(start_usbh_thread, start_usbh_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
+    //osThreadCreate(osThread(start_usbh_thread), NULL);
 
-	osThreadDef(start_lwip_thread, start_lwip_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
+	osThreadDef(start_lwip_thread, start_lwip_thread, osPriorityNormal, 0, 8 * configMINIMAL_STACK_SIZE);
     osThreadCreate(osThread(start_lwip_thread), NULL);
 
 	/* Start scheduler */

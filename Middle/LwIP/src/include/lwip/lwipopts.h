@@ -193,7 +193,7 @@ The STM32F7xx allows computing and verifying the IP, UDP, TCP and ICMP checksums
 /**
  * LWIP_NETCONN==1: Enable Netconn API (require to use api_lib.c)
  */
-#define LWIP_NETCONN                    1
+#define LWIP_NETCONN                    0
 
 /*
    ------------------------------------
@@ -203,7 +203,7 @@ The STM32F7xx allows computing and verifying the IP, UDP, TCP and ICMP checksums
 /**
  * LWIP_SOCKET==1: Enable Socket API (require to use sockets.c)
  */
-#define LWIP_SOCKET                     0
+#define LWIP_SOCKET                     1
 
 /*
    ------------------------------------
@@ -214,6 +214,7 @@ The STM32F7xx allows computing and verifying the IP, UDP, TCP and ICMP checksums
  * file system (to prevent changing the file included in CVS) */
 #define HTTPD_USE_CUSTOM_FSDATA   1
 
+#define LWIP_SO_RCVTIMEO                1
 
 /*
    ---------------------------------

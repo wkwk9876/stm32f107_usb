@@ -5,6 +5,7 @@
 
 #include "systemMyLib.h"
 
+#define PUT_CHAR_TO_NETWORK
 
 #define USARTx                           USART2
 #define USARTx_CLK_ENABLE()              __HAL_RCC_USART2_CLK_ENABLE();

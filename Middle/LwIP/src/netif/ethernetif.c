@@ -583,4 +583,144 @@ u32_t sys_now(void)
 {
   return HAL_GetTick();
 }
+
+
+#if 0
+/**
+  * @brief  This function sets the netif link status.
+  * @param  netif: the network interface
+  * @retval None
+  */
+void ethernetif_set_link(struct netif *netif)
+{
+  uint32_t regvalue = 0;
+  
+  /* Read PHY_MISR*/
+  HAL_ETH_ReadPHYRegister(&EthHandle, PHY_MISR, &regvalue);
+  
+  /* Check whether the link interrupt has occurred or not */
+  if((regvalue & PHY_LINK_INTERRUPT) != (uint16_t)RESET)
+  {
+    /* Read PHY_SR*/
+    HAL_ETH_ReadPHYRegister(&EthHandle, PHY_SR, &regvalue);
+    
+    /* Check whether the link is up or down*/
+    if((regvalue & PHY_LINK_STATUS)!= (uint16_t)RESET)
+    {
+      netif_set_link_up(netif);
+    }
+    else
+    {
+      netif_set_link_down(netif);
+    }
+  }
+}
+#endif
+
+/**
+  * @brief  This function notify user about link status changement.
+  * @param  netif: the network interface
+  * @retval None
+  */
+__weak void ethernetif_notify_conn_changed(struct netif *netif)
+{
+  /* NOTE : This is function could be implemented in user file 
+            when the callback is needed,
+  */  
+}
+
+
+/**
+  * @brief  Link callback function, this function is called on change of link status
+  *         to update low level driver configuration.
+  * @param  netif: The network interface
+  * @retval None
+  */
+void ethernetif_update_config(struct netif *netif)
+{
+  __IO uint32_t tickstart = 0;
+  uint32_t regvalue = 0;
+
+#if 0
+  
+  if(netif_is_link_up(netif))
+  { 
+    /* Restart the auto-negotiation */
+    if(EthHandle.Init.AutoNegotiation != ETH_AUTONEGOTIATION_DISABLE)
+    {
+      /* Enable Auto-Negotiation */
+      HAL_ETH_WritePHYRegister(&EthHandle, PHY_BCR, PHY_AUTONEGOTIATION);
+      
+      /* Get tick */
+      tickstart = HAL_GetTick();
+      
+      /* Wait until the auto-negotiation will be completed */
+      do
+      {
+        HAL_ETH_ReadPHYRegister(&EthHandle, PHY_BSR, &regvalue);
+        
+        /* Check for the Timeout ( 1s ) */
+        if((HAL_GetTick() - tickstart ) > 1000)
+        {
+          /* In case of timeout */
+          goto error;
+        }
+        
+      } while (((regvalue & PHY_AUTONEGO_COMPLETE) != PHY_AUTONEGO_COMPLETE));
+      
+      /* Read the result of the auto-negotiation */
+      HAL_ETH_ReadPHYRegister(&EthHandle, PHY_SR, &regvalue);
+      
+      /* Configure the MAC with the Duplex Mode fixed by the auto-negotiation process */
+      if((regvalue & PHY_DUPLEX_STATUS) != (uint32_t)RESET)
+      {
+        /* Set Ethernet duplex mode to Full-duplex following the auto-negotiation */
+        EthHandle.Init.DuplexMode = ETH_MODE_FULLDUPLEX;  
+      }
+      else
+      {
+        /* Set Ethernet duplex mode to Half-duplex following the auto-negotiation */
+        EthHandle.Init.DuplexMode = ETH_MODE_HALFDUPLEX;           
+      }
+      /* Configure the MAC with the speed fixed by the auto-negotiation process */
+      if(regvalue & PHY_SPEED_STATUS)
+      {  
+        /* Set Ethernet speed to 10M following the auto-negotiation */
+        EthHandle.Init.Speed = ETH_SPEED_10M; 
+      }
+      else
+      {   
+        /* Set Ethernet speed to 100M following the auto-negotiation */ 
+        EthHandle.Init.Speed = ETH_SPEED_100M;
+      }
+    }
+    else /* AutoNegotiation Disable */
+    {
+    error :
+      /* Check parameters */
+      assert_param(IS_ETH_SPEED(EthHandle.Init.Speed));
+      assert_param(IS_ETH_DUPLEX_MODE(EthHandle.Init.DuplexMode));
+      
+      /* Set MAC Speed and Duplex Mode to PHY */
+      HAL_ETH_WritePHYRegister(&EthHandle, PHY_BCR, ((uint16_t)(EthHandle.Init.DuplexMode >> 3) |
+                                                     (uint16_t)(EthHandle.Init.Speed >> 1))); 
+    }
+
+    /* ETHERNET MAC Re-Configuration */
+    HAL_ETH_ConfigMAC(&EthHandle, (ETH_MACInitTypeDef *) NULL);
+
+    /* Restart MAC interface */
+    HAL_ETH_Start(&EthHandle);   
+  }
+  else
+  {
+    /* Stop MAC interface */
+    HAL_ETH_Stop(&EthHandle);
+  }
+#endif
+  ethernetif_notify_conn_changed(netif);
+}
+
+
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

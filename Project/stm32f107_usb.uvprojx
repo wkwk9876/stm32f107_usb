@@ -639,6 +639,16 @@
               <FileType>1</FileType>
               <FilePath>..\User\system_stm32f1xx.c</FilePath>
             </File>
+            <File>
+              <FileName>test_lwip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\test_lwip.c</FilePath>
+            </File>
+            <File>
+              <FileName>test_usbh.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\test_usbh.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

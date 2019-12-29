@@ -19,10 +19,22 @@ void _sys_exit(int x)
 	x = x; 
 } 
 
+#ifdef PUT_CHAR_TO_NETWORK
+#include "test_lwip.h"
+extern struct TX_buffer_manage * txbuf;
+#endif
+
 int fputc(int ch, FILE *f)
 { 	
 	while((USARTx->SR&0X40)==0);
-	USARTx->DR=(uint8_t)ch;      
+	USARTx->DR=(uint8_t)ch;   
+#ifdef PUT_CHAR_TO_NETWORK
+	if(NULL != txbuf)
+	{
+		txbuf->tx_buffer[txbuf->p_write & TX_BUFFER_MASK] = ch;
+		++txbuf->p_write;
+	}
+#endif
 	return ch;
 }
 
