@@ -13,6 +13,8 @@
 #include "main.h"
 #include "test_lwip.h"
 
+#if LWIP_SOCKET
+
 #ifdef USE_DHCP
 /* DHCP process states */
 #define DHCP_OFF                   (uint8_t) 0
@@ -27,12 +29,14 @@
 __IO uint8_t DHCP_state = DHCP_OFF;
 #endif
 
-
-
-
-struct netif gnetif; /* network interface structure */
-char rxbuf[RX_BUFFER_SIZE];
+static struct netif 	gnetif; /* network interface structure */
+static char 			rxbuf[RX_BUFFER_SIZE];
 struct TX_buffer_manage * txbuf = NULL;
+
+struct netif * get_gnetif(void)
+{
+	return &gnetif;
+}
 
 void ethernetif_notify_conn_changed(struct netif *netif)
 {
@@ -234,7 +238,7 @@ int connect_to_server(struct netif *netif)
 			return -1;
 		}
 		
-		__PRINT_LOG__(__ERR_LEVEL__, "connect success!\r\n");
+		__PRINT_LOG__(__CRITICAL_LEVEL__, "connect success!\r\n");
 		
 		return socket_fd;
 	}
@@ -305,8 +309,10 @@ void send_thread(void const * argument)
 
 		__PRINT_LOG__(__ERR_LEVEL__, "netif_is_down tx thread exit(%d)!\r\n", ret);
 
+		portENTER_CRITICAL();
 		vPortFree(txbuf);
 		txbuf = NULL;
+		portEXIT_CRITICAL();
 	}
 	else
 	{
@@ -314,18 +320,16 @@ void send_thread(void const * argument)
 	}
 
 	/* Delete the Init Thread */ 
-	osThreadTerminate(NULL);
+	for( ;; )
+	{
+		osThreadTerminate(NULL);
+	}
 }
 
 int recv_data(struct netif *netif, int socket)
 {
 	int ret;
-	struct timeval timeout;
-	struct TX_buffer_manage * tmp = NULL;
-
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 10 * 1000;
-
+	
 	while(1)
 	{
 		ret = read(socket, rxbuf, RX_BUFFER_SIZE);
@@ -371,21 +375,29 @@ void start_lwip_thread(void const * argument)
 			int socket_fd = -1;
 			if((socket_fd = connect_to_server(&gnetif)) > 0)
 			{
-				struct TX_buffer_manage * tmp = NULL;
-	
-				tmp = (struct TX_buffer_manage *)pvPortMalloc(sizeof(struct TX_buffer_manage));
-				if(NULL != tmp)
+				osThreadId ret;
+				osThreadDef(send_thread, send_thread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 5);
+				ret = osThreadCreate (osThread(send_thread), &socket_fd);
+				if(NULL == ret)
 				{
-					memset(tmp, 0, sizeof(struct TX_buffer_manage));
-					txbuf = tmp;
+					__PRINT_LOG__(__ERR_LEVEL__, "osThreadCreate failed!\r\n");
 				}
+				else
+				{
+					recv_data(&gnetif, socket_fd);
 
-				osThreadDef(send_thread, send_thread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 4);
-				osThreadCreate (osThread(send_thread), &socket_fd);
-				
-				recv_data(&gnetif, socket_fd);
+					while(NULL != txbuf)
+					{
+						HAL_Delay(1);
+					}
+					//if thread Terminate itself,the resource of this thread will be release
+					//only when the system in idle. If the system no idle status, the resource
+					//will not be free. So, we delete it by ourself again.
+					osThreadTerminate(ret);
 
-				//if recv return
+					//if recv return
+				}				
+
 				close(socket_fd);
 			}
 			else
@@ -406,4 +418,4 @@ void start_lwip_thread(void const * argument)
 	}*/
 }
 
-
+#endif

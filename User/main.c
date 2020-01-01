@@ -23,8 +23,13 @@
 
 #include "main.h"
 
+#include "lwip/lwipopts.h"
 #include "test_lwip.h"
+#include "test_lwip_seq_api.h"
+#include "test_lwip_tcp_udp_echo_server.h"
+
 #include "test_usbh.h"
+
 
 /** @addtogroup STM32F1xx_HAL_Examples
   * @{
@@ -42,10 +47,6 @@
 //void SystemClock_Config(void);
 
 /* Private functions ---------------------------------------------------------*/
-
-#include "test_lwip.h"
-extern struct TX_buffer_manage * txbuf;
-
 static void TEST_Task(void const *argument)
 {
 	uint32_t i = 0;
@@ -75,7 +76,7 @@ int main(void)
 	delay_init(72); 
 
 	/* Add your application code here */
-	uart_init(115200);
+	uart_init(921600);
 
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 
@@ -94,9 +95,18 @@ int main(void)
 
 	//osThreadDef(start_usbh_thread, start_usbh_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
     //osThreadCreate(osThread(start_usbh_thread), NULL);
-
-	osThreadDef(start_lwip_thread, start_lwip_thread, osPriorityNormal, 0, 8 * configMINIMAL_STACK_SIZE);
+    
+#if LWIP_SOCKET
+	__PRINT_LOG__(__CRITICAL_LEVEL__, "lwip socket start!\r\n");
+	osThreadDef(start_lwip_thread, start_lwip_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
     osThreadCreate(osThread(start_lwip_thread), NULL);
+#elif LWIP_NETCONN
+	osThreadDef(start_lwip_thread_seq, start_lwip_thread_seq, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
+    osThreadCreate(osThread(start_lwip_thread_seq), NULL);
+#endif
+
+	osThreadDef(start_lwip_echo_thread, start_lwip_echo_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
+    osThreadCreate(osThread(start_lwip_echo_thread), NULL);
 
 	/* Start scheduler */
 	osKernelStart();

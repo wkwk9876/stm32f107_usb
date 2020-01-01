@@ -21,6 +21,7 @@ void _sys_exit(int x)
 
 #ifdef PUT_CHAR_TO_NETWORK
 #include "test_lwip.h"
+#include "test_lwip_seq_api.h"
 extern struct TX_buffer_manage * txbuf;
 #endif
 
@@ -29,11 +30,13 @@ int fputc(int ch, FILE *f)
 	while((USARTx->SR&0X40)==0);
 	USARTx->DR=(uint8_t)ch;   
 #ifdef PUT_CHAR_TO_NETWORK
+	portENTER_CRITICAL();
 	if(NULL != txbuf)
 	{
 		txbuf->tx_buffer[txbuf->p_write & TX_BUFFER_MASK] = ch;
 		++txbuf->p_write;
 	}
+	portEXIT_CRITICAL();
 #endif
 	return ch;
 }
