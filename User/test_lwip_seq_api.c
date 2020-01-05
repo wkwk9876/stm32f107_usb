@@ -205,39 +205,36 @@ static void udp_send_thread(void const * argument)
 
 							if(((p_rd & TX_BUFFER_MASK) + len) > TX_BUFFER_SIZE)
 							{
-								netbuf_alloc(buf, TX_BUFFER_SIZE - (p_rd & TX_BUFFER_MASK));
-								netbuf_take(buf, &txbuf->tx_buffer[p_rd & TX_BUFFER_MASK], 
-												TX_BUFFER_SIZE - (p_rd & TX_BUFFER_MASK));
-								err = netconn_send(conn, buf);
-								if(ERR_OK != err)
-								{
-									//__PRINT_LOG__(__ERR_LEVEL__, "netconn_send failed(%d)!\r\n", err);
-									break;
-								}
-								netbuf_free(buf);
+								netbuf_ref(buf, &txbuf->tx_buffer[p_rd & TX_BUFFER_MASK],
+										TX_BUFFER_SIZE - (p_rd & TX_BUFFER_MASK));
 
-								netbuf_alloc(buf, (p_rd & TX_BUFFER_MASK) + len - TX_BUFFER_SIZE);
-								netbuf_take(buf, &txbuf->tx_buffer[0], 
-												(p_rd & TX_BUFFER_MASK) + len - TX_BUFFER_SIZE);
 								err = netconn_send(conn, buf);
 								if(ERR_OK != err)
 								{
 									//__PRINT_LOG__(__ERR_LEVEL__, "netconn_send failed(%d)!\r\n", err);
 									break;
 								}
-								netbuf_free(buf);
+
+								netbuf_ref(buf, &txbuf->tx_buffer[0],
+										(p_rd & TX_BUFFER_MASK) + len - TX_BUFFER_SIZE);
+								
+								err = netconn_send(conn, buf);
+								if(ERR_OK != err)
+								{
+									//__PRINT_LOG__(__ERR_LEVEL__, "netconn_send failed(%d)!\r\n", err);
+									break;
+								}
 							}
 							else
 							{
-								netbuf_alloc(buf, len);
-								netbuf_take(buf, &txbuf->tx_buffer[p_rd & TX_BUFFER_MASK], len);
+ 								netbuf_ref(buf, &txbuf->tx_buffer[p_rd & TX_BUFFER_MASK], len);
+
 								err = netconn_send(conn, buf);
 								if(ERR_OK != err)
 								{
 									//__PRINT_LOG__(__ERR_LEVEL__, "netconn_send failed(%d)!\r\n", err);
 									break;
 								}
-								netbuf_free(buf);
 							}
 
 							txbuf->p_read += (p_wt - p_rd);

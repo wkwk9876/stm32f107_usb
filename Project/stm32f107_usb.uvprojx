@@ -649,6 +649,16 @@
               <FileType>1</FileType>
               <FilePath>..\User\test_usbh.c</FilePath>
             </File>
+            <File>
+              <FileName>test_lwip_seq_api.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\test_lwip_seq_api.c</FilePath>
+            </File>
+            <File>
+              <FileName>test_lwip_tcp_udp_echo_server.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\test_lwip_tcp_udp_echo_server.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

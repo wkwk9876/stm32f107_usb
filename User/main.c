@@ -73,7 +73,7 @@ int main(void)
 
 	/* Configure the system clock to 72 MHz */
 	SystemClock_Config(RCC_PLL_MUL9);
-	delay_init(72); 
+	delay_init(120); 
 
 	/* Add your application code here */
 	uart_init(921600);
@@ -103,10 +103,12 @@ int main(void)
 #elif LWIP_NETCONN
 	osThreadDef(start_lwip_thread_seq, start_lwip_thread_seq, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
     osThreadCreate(osThread(start_lwip_thread_seq), NULL);
+
+	osThreadDef(start_lwip_echo_thread, start_lwip_echo_thread, osPriorityNormal, 0, 8 * configMINIMAL_STACK_SIZE);
+	osThreadCreate(osThread(start_lwip_echo_thread), NULL);
 #endif
 
-	osThreadDef(start_lwip_echo_thread, start_lwip_echo_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
-    osThreadCreate(osThread(start_lwip_echo_thread), NULL);
+	
 
 	/* Start scheduler */
 	osKernelStart();

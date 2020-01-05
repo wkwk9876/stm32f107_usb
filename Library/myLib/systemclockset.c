@@ -26,7 +26,7 @@ void SystemClock_Config(uint32_t pll)
   /* Enable HSE Oscillator and activate PLL with HSE as source */
   oscinitstruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   oscinitstruct.HSEState = RCC_HSE_ON;
-  oscinitstruct.HSEPredivValue = RCC_HSE_PREDIV_DIV5;
+  oscinitstruct.HSEPredivValue = RCC_HSE_PREDIV_DIV3;//RCC_HSE_PREDIV_DIV5;
   oscinitstruct.PLL.PLLMUL = RCC_PLL_MUL9;
   oscinitstruct.Prediv1Source = RCC_PREDIV1_SOURCE_PLL2;
 
