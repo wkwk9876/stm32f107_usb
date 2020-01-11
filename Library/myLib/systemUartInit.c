@@ -4,6 +4,7 @@
 #include "systemUartInit.h"
 
 #include "FreeRTOS.h"					//os ??	  
+#include "task.h"
 
 #pragma import(__use_no_semihosting)             
               
@@ -30,13 +31,17 @@ int fputc(int ch, FILE *f)
 	while((USARTx->SR&0X40)==0);
 	USARTx->DR=(uint8_t)ch;   
 #ifdef PUT_CHAR_TO_NETWORK
-	portENTER_CRITICAL();
+	uint32_t mask;
+	
+	mask = taskENTER_CRITICAL_FROM_ISR();
+
 	if(NULL != txbuf)
 	{
 		txbuf->tx_buffer[txbuf->p_write & TX_BUFFER_MASK] = ch;
 		++txbuf->p_write;
 	}
-	portEXIT_CRITICAL();
+
+	taskEXIT_CRITICAL_FROM_ISR(mask);
 #endif
 	return ch;
 }

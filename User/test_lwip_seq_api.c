@@ -333,10 +333,10 @@ static osThreadId init_send_thread(struct netconn * conn)
 	osThreadId id;
 	
 #ifdef USE_TCP
-	osThreadDef(tcp_send_thread, tcp_send_thread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 5);
+	osThreadDef(tcp_send_thread, tcp_send_thread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 4);
 	id = osThreadCreate (osThread(tcp_send_thread), conn);
 #else
-	osThreadDef(udp_send_thread, udp_send_thread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 5);
+	osThreadDef(udp_send_thread, udp_send_thread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 4);
 	id = osThreadCreate (osThread(udp_send_thread), conn);
 #endif
 

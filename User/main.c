@@ -73,7 +73,7 @@ int main(void)
 
 	/* Configure the system clock to 72 MHz */
 	SystemClock_Config(RCC_PLL_MUL9);
-	delay_init(120); 
+	delay_init(72); 
 
 	/* Add your application code here */
 	uart_init(921600);
@@ -90,11 +90,11 @@ int main(void)
 	
 	__PRINT_LOG__(__CRITICAL_LEVEL__, "freertos start!\r\n");
 
-	osThreadDef(TEST_Task, TEST_Task, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
+	osThreadDef(TEST_Task, TEST_Task, osPriorityNormal, 0, 1 * configMINIMAL_STACK_SIZE);
 	osThreadCreate(osThread(TEST_Task), NULL);
 
-	//osThreadDef(start_usbh_thread, start_usbh_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
-    //osThreadCreate(osThread(start_usbh_thread), NULL);
+	osThreadDef(start_usbh_thread, start_usbh_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
+    osThreadCreate(osThread(start_usbh_thread), NULL);
     
 #if LWIP_SOCKET
 	__PRINT_LOG__(__CRITICAL_LEVEL__, "lwip socket start!\r\n");
@@ -104,8 +104,8 @@ int main(void)
 	osThreadDef(start_lwip_thread_seq, start_lwip_thread_seq, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
     osThreadCreate(osThread(start_lwip_thread_seq), NULL);
 
-	osThreadDef(start_lwip_echo_thread, start_lwip_echo_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
-	osThreadCreate(osThread(start_lwip_echo_thread), NULL);
+	//osThreadDef(start_lwip_echo_thread, start_lwip_echo_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
+	//osThreadCreate(osThread(start_lwip_echo_thread), NULL);
 #endif
 
 	
