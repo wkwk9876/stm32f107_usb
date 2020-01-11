@@ -104,7 +104,7 @@ int main(void)
 	osThreadDef(start_lwip_thread_seq, start_lwip_thread_seq, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
     osThreadCreate(osThread(start_lwip_thread_seq), NULL);
 
-	osThreadDef(start_lwip_echo_thread, start_lwip_echo_thread, osPriorityNormal, 0, 8 * configMINIMAL_STACK_SIZE);
+	osThreadDef(start_lwip_echo_thread, start_lwip_echo_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
 	osThreadCreate(osThread(start_lwip_echo_thread), NULL);
 #endif
 
