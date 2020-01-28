@@ -730,6 +730,20 @@ USBH_StatusTypeDef  USBH_Process(USBH_HandleTypeDef *phost)
 }
 
 
+static void printf_interface(USBH_HandleTypeDef *phost, int index)
+{
+	USBH_UsrLog("============interface : %d============", index);
+	USBH_UsrLog("Length: %d", phost->device.CfgDesc.Itf_Desc[index].bLength);
+	USBH_UsrLog("DescriptorType: %d", phost->device.CfgDesc.Itf_Desc[index].bDescriptorType);
+	USBH_UsrLog("InterfaceNumber: %d", phost->device.CfgDesc.Itf_Desc[index].bInterfaceNumber);
+	USBH_UsrLog("AlternateSetting: %d", phost->device.CfgDesc.Itf_Desc[index].bAlternateSetting);
+	USBH_UsrLog("NumEndpoints: %d", phost->device.CfgDesc.Itf_Desc[index].bNumEndpoints);
+	USBH_UsrLog("InterfaceClass: %d", phost->device.CfgDesc.Itf_Desc[index].bInterfaceClass);
+	USBH_UsrLog("InterfaceSubClass: %d", phost->device.CfgDesc.Itf_Desc[index].bInterfaceSubClass);
+	USBH_UsrLog("InterfaceProtocol: %d", phost->device.CfgDesc.Itf_Desc[index].bInterfaceProtocol);
+	USBH_UsrLog("Interface: %d", phost->device.CfgDesc.Itf_Desc[index].iInterface);
+}
+
 /**
   * @brief  USBH_HandleEnum 
   *         This function includes the complete enumeration process
@@ -862,7 +876,7 @@ static USBH_StatusTypeDef USBH_HandleEnum (USBH_HandleTypeDef *phost)
     if ( USBH_Get_CfgDesc(phost, 
                           USB_CONFIGURATION_DESC_SIZE) == USBH_OK)
     {
-      phost->EnumState = ENUM_GET_FULL_CFG_DESC;        
+      phost->EnumState = ENUM_GET_FULL_CFG_DESC; 
     }
     break;
     
@@ -871,7 +885,13 @@ static USBH_StatusTypeDef USBH_HandleEnum (USBH_HandleTypeDef *phost)
     if (USBH_Get_CfgDesc(phost, 
                          phost->device.CfgDesc.wTotalLength) == USBH_OK)
     {
-      phost->EnumState = ENUM_GET_MFC_STRING_DESC;       
+      phost->EnumState = ENUM_GET_MFC_STRING_DESC;     
+	  USBH_UsrLog("config descriptor len : %d",  phost->device.CfgDesc.wTotalLength);
+	  USBH_UsrLog("NumInterfaces: %d",  phost->device.CfgDesc.bNumInterfaces);
+	  for(int i = 0; i < phost->device.CfgDesc.bNumInterfaces; ++i)
+	  {
+	  	printf_interface(phost, i);
+	  }
     }
     break;
     

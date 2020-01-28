@@ -310,9 +310,9 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>3</Optim>
+            <Optim>4</Optim>
             <oTime>1</oTime>
-            <SplitLS>1</SplitLS>
+            <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
             <Strict>0</Strict>
             <EnumInt>0</EnumInt>
@@ -335,7 +335,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F107xC</Define>
               <Undefine></Undefine>
-              <IncludePath>..\Core;..\Driver\Inc;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\FreeRTOS\CMSIS_RTOS;..\Library\myLib;..\User;..\Middle\STM32_USB_Host_Library\Core\Inc;..\Middle\STM32_USB_Host_Library\Class\MSC\Inc;..\Middle\STM32_USB_Host_Library\Class\CH340\Inc;..\Middle\STM32_USB_Host_Library\Class\HUB\Inc;..\Middle\FatFs\src;..\Middle\FatFs\src\drivers;..\Middle\LwIP\system;..\Middle\LwIP\src\include</IncludePath>
+              <IncludePath>..\Core;..\Driver\Inc;..\FreeRTOS\include;..\FreeRTOS\portable\RVDS\ARM_CM3;..\FreeRTOS\CMSIS_RTOS;..\Library\myLib;..\User;..\Middle\STM32_USB_Host_Library\Core\Inc;..\Middle\STM32_USB_Host_Library\Class\MSC\Inc;..\Middle\STM32_USB_Host_Library\Class\CE20\Inc;..\Middle\STM32_USB_Host_Library\Class\CH340\Inc;..\Middle\STM32_USB_Host_Library\Class\HUB\Inc;..\Middle\FatFs\src;..\Middle\FatFs\src\drivers;..\Middle\LwIP\system;..\Middle\LwIP\src\include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -659,6 +659,11 @@
               <FileType>1</FileType>
               <FilePath>..\User\test_lwip_tcp_udp_echo_server.c</FilePath>
             </File>
+            <File>
+              <FileName>app_ce20.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\app_ce20.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -738,6 +743,16 @@
               <FileName>ff_gen_drv.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middle\FatFs\src\ff_gen_drv.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Middle/USBH/Class/CE20</GroupName>
+          <Files>
+            <File>
+              <FileName>usbh_ce20.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middle\STM32_USB_Host_Library\Class\CE20\Src\usbh_ce20.c</FilePath>
             </File>
           </Files>
         </Group>

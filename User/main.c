@@ -90,8 +90,8 @@ int main(void)
 	
 	__PRINT_LOG__(__CRITICAL_LEVEL__, "freertos start!\r\n");
 
-	osThreadDef(TEST_Task, TEST_Task, osPriorityNormal, 0, 1 * configMINIMAL_STACK_SIZE);
-	osThreadCreate(osThread(TEST_Task), NULL);
+	//osThreadDef(TEST_Task, TEST_Task, osPriorityNormal, 0, 1 * configMINIMAL_STACK_SIZE);
+	//osThreadCreate(osThread(TEST_Task), NULL);
 
 	osThreadDef(start_usbh_thread, start_usbh_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
     osThreadCreate(osThread(start_usbh_thread), NULL);

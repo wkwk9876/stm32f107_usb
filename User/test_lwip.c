@@ -96,7 +96,11 @@ static void Netif_Config(void)
 #endif /* USE_DHCP */
 
 	/* add the network interface */    
-	netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
+	while(NULL == netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input))
+	{
+		__PRINT_LOG__(__ERR_LEVEL__, "netif_add failed! Please check network connect!\r\n");
+		HAL_Delay(1000);
+	}
 
 	/*  Registers the default network interface. */
 	netif_set_default(&gnetif);

@@ -2,7 +2,7 @@
 #include "usbh_def.h"
 #include "usbh_core.h"
 #include "usbh_msc.h"
-#include "usbh_ch340.h"
+#include "usbh_ce20.h"
 #include "usbh_hub.h"
 
 #include "main.h"
@@ -10,11 +10,32 @@
 
 USBH_HandleTypeDef hUSBHost;
 
+extern Usb_Application_Class app_ce20;
+
+Usb_Application_Class * AppClass[] = 
+{
+	&app_ce20,
+};
+
+static int get_activeclass_app(USBH_HandleTypeDef * phost)
+{
+	int i;
+
+	for(i = 0; i < sizeof(AppClass) / sizeof(AppClass[0]); ++i)
+	{
+		if(AppClass[i]->ClassCode == phost->pActiveClass->ClassCode)
+		{
+			phost->app_class = AppClass[i];
+			return 0;
+		}
+	}
+	return -1;
+}
+
 
 static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
 {
-	//CDC_HandleTypeDef *CDC_Handle =  (CDC_HandleTypeDef*) phost->pActiveClass->pData;
-	/*switch (id)
+	switch (id)
 	{
 	case HOST_USER_SELECT_CONFIGURATION:
 		break;
@@ -31,7 +52,6 @@ static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
 		break;
 
 	case HOST_USER_CLASS_ACTIVE:
-		//__PRINT_LOG__(__CRITICAL_LEVEL__, "DEBUG : get defualt bandrate: %d!\r\n", CDC_Handle->LineCoding);
 		if(NULL != phost && NULL != phost->app_class)
 		{
 			Usb_Application_Class * app_class = (Usb_Application_Class *)phost->app_class;
@@ -50,7 +70,8 @@ static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
 		break;
 
 	default:
-		break;*/
+		break;
+	}
   }
 
 
@@ -68,7 +89,7 @@ int init_usb_host(USBH_HandleTypeDef * phost)
 
 	/* Add Supported Class */
 	ret = USBH_RegisterClass(phost, USBH_MSC_CLASS);
-	ret = USBH_RegisterClass(phost, USBH_CH340_CLASS);
+	ret = USBH_RegisterClass(phost, USBH_CE20_CLASS);
 	ret = USBH_RegisterClass(phost, USBH_HUB_CLASS);
 	__PRINT_LOG__(__CRITICAL_LEVEL__, "USBH_RegisterClass complete\r\n");
 

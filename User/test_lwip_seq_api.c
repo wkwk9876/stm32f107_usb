@@ -15,9 +15,14 @@
 
 #if LWIP_NETCONN
 
+#define LINK_WAITING		0
+#define LINK_SUCCESS		1
+#define LINK_FAILED 		2
+
 static struct netif 		gnetif; 				/* network interface structure */
 static char 				rxbuf[RX_BUFFER_SIZE];	/* network RX buffer */
 struct TX_buffer_manage 	* txbuf = NULL;			/* network TX buffer */
+int 						connect_status = LINK_WAITING;
 
 struct netif * get_gnetif(void)
 {
@@ -43,13 +48,14 @@ static void tcp_send_thread(void const * argument)
 
 		if(NULL != conn)
 		{
-			__PRINT_LOG__(__CRITICAL_LEVEL__, "TCP identifier create success!\r\n");
+			__PRINT_LOG__(__CRITICAL_LEVEL__, "TCP identifier create success!\r\n");			
 			
 			err = netconn_connect(conn, &serverAddr, TARGET_PORT);
 			if(ERR_OK == err)
 			{
 				__PRINT_LOG__(__CRITICAL_LEVEL__, "TCP connect success!\r\n");
 
+				connect_status = LINK_SUCCESS;
 				while(netif_is_up(&gnetif))
 				{
 					if(txbuf->p_write - txbuf->p_read)
@@ -99,11 +105,15 @@ static void tcp_send_thread(void const * argument)
 			else
 			{
 				__PRINT_LOG__(__ERR_LEVEL__, "TCP connect failed!\r\n");
+				
+				connect_status = LINK_FAILED;
 			}
 		}
 		else
 		{
 			__PRINT_LOG__(__ERR_LEVEL__, "TCP identifier create failed!\r\n");
+
+			connect_status = LINK_FAILED;
 		}
 		
 		__PRINT_LOG__(__ERR_LEVEL__, "netif_is_down tx thread exit(%d)!\r\n", err);
@@ -116,6 +126,8 @@ static void tcp_send_thread(void const * argument)
 	else
 	{
 		__PRINT_LOG__(__ERR_LEVEL__, "malloc txbuf failed!\r\n");
+
+		connect_status = LINK_FAILED;
 	}
 
 	osThreadTerminate(NULL);
@@ -128,7 +140,7 @@ static void start_tcp_recv(struct netconn * conn)
 	struct netbuf     		* buf;
 	void              		* data;
 
-	while(1)
+	while(LINK_SUCCESS == connect_status)
 	{
 		if(ERR_OK == (err = netconn_recv(conn, &buf)))
 	    {
@@ -195,6 +207,7 @@ static void udp_send_thread(void const * argument)
 				buf = netbuf_new();
 				if(NULL != buf) 
 				{
+					connect_status = LINK_SUCCESS;
 					while(netif_is_up(&gnetif))
 					{
 						if(txbuf->p_write - txbuf->p_read)
@@ -252,21 +265,25 @@ static void udp_send_thread(void const * argument)
 				}
 				else
 				{
+					connect_status = LINK_FAILED;
 					__PRINT_LOG__(__ERR_LEVEL__, "netbuf_new failed!\r\n");
 				}
 			}
 			else
 			{
+				connect_status = LINK_FAILED;
 				__PRINT_LOG__(__ERR_LEVEL__, "UDP local port bind fail!\r\n");
 			}
 		}
 		else
 		{
+			connect_status = LINK_FAILED;
 			__PRINT_LOG__(__ERR_LEVEL__, "UDP netconn_connect fail!\r\n");
 		}
 	}
 	else
 	{
+		connect_status = LINK_FAILED;
 		__PRINT_LOG__(__ERR_LEVEL__, "malloc txbuf failed or conn is null!\r\n");
 	}
 	
@@ -279,7 +296,7 @@ static void start_udp_recv(struct netconn * conn)
 	uint16_t            	len;
 	struct netbuf     		* buf = NULL;
 
-	while(1)
+	while(LINK_SUCCESS == connect_status)
 	{
 		err = netconn_recv(conn, &buf);
         if(ERR_OK == err)
@@ -375,7 +392,11 @@ static void Netif_Config(void)
 #endif /* USE_DHCP */
 
 	/* add the network interface */    
-	netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
+	while(NULL == netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input))
+	{
+		__PRINT_LOG__(__ERR_LEVEL__, "netif_add failed! Please check network connect!\r\n");
+		HAL_Delay(1000);
+	}
 
 	/*  Registers the default network interface. */
 	netif_set_default(&gnetif);
@@ -421,6 +442,9 @@ void start_lwip_thread_seq(void const * argument)
 				if(conn)
 				{
 					osThreadId id;
+					
+					connect_status = LINK_WAITING;
+					
 					if(NULL == (id = init_send_thread(conn)))
 					{
 						__PRINT_LOG__(__ERR_LEVEL__, "lwip send init failed !\r\n");
@@ -428,10 +452,16 @@ void start_lwip_thread_seq(void const * argument)
 					}
 					else
 					{
+						while(LINK_WAITING == connect_status)
+						{
+							HAL_Delay(50);
+						}
+						
 						start_recv(conn);// should nerver return
+						
 						while(NULL != txbuf)
 						{
-							HAL_Delay(1);
+							HAL_Delay(10);
 						}
 						//if thread Terminate itself,the resource of this thread will be release
 						//only when the system in idle. If the system no idle status, the resource

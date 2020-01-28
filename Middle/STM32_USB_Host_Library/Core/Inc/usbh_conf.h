@@ -55,7 +55,7 @@
 
 /* Exported types ------------------------------------------------------------*/
 #define USBH_MAX_NUM_ENDPOINTS                8
-#define USBH_MAX_NUM_INTERFACES               2
+#define USBH_MAX_NUM_INTERFACES               5
 #define USBH_MAX_NUM_CONFIGURATION            1
 #define USBH_MAX_NUM_SUPPORTED_CLASS          3
 #define USBH_KEEP_CFG_DESCRIPTOR              0

@@ -243,7 +243,7 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth)
   * @param netif the already initialized lwip network interface structure
   *        for this ethernetif
   */
-static void low_level_init(struct netif *netif)
+static int low_level_init(struct netif *netif)
 {
   uint8_t macaddress[6]= { MAC_ADDR0, MAC_ADDR1, MAC_ADDR2, MAC_ADDR3, MAC_ADDR4, MAC_ADDR5 };
   uint32_t regvalue = 0;
@@ -274,6 +274,7 @@ static void low_level_init(struct netif *netif)
   else
   {
     printf("HAL_ETH_Init failed!(ret:%d)\r\n", ret);
+	return ret;
   }
   
   /* Initialize Tx Descriptors list: Chain Mode */
@@ -318,6 +319,8 @@ static void low_level_init(struct netif *netif)
   
   /* Read Register Configuration */
   HAL_ETH_ReadPHYRegister(&EthHandle, PHY_ISFR , &regvalue);
+
+  return ret;
 }
 
 
@@ -568,7 +571,8 @@ err_t ethernetif_init(struct netif *netif)
   netif->linkoutput = low_level_output;
 
   /* initialize the hardware */
-  low_level_init(netif);
+  if(HAL_OK != low_level_init(netif))
+  	return ERR_TIMEOUT;
 
   return ERR_OK;
 }
