@@ -32,7 +32,6 @@ static int get_activeclass_app(USBH_HandleTypeDef * phost)
 	return -1;
 }
 
-
 static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
 {
 	switch (id)
@@ -72,8 +71,7 @@ static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
 	default:
 		break;
 	}
-  }
-
+}
 
 int init_usb_host(USBH_HandleTypeDef * phost)
 {
@@ -218,8 +216,6 @@ void ec20PowerInit()
 
 	__PRINT_LOG__(__CRITICAL_LEVEL__, "EC20 power init completed\r\n");
 }
-
-
 
 void start_usbh_thread(void const * argument)
 {

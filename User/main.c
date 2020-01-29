@@ -64,11 +64,7 @@ static void TEST_Task(void const *argument)
   * @retval None
   */
 int main(void)
-{
-	GPIO_InitTypeDef GPIO_InitStruct;
-
-	
-	
+{	
 	HAL_Init();
 
 	/* Configure the system clock to 72 MHz */
@@ -78,16 +74,6 @@ int main(void)
 	/* Add your application code here */
 	uart_init(921600);
 
-	__HAL_RCC_GPIOC_CLK_ENABLE();
-
-	//init put hub in reset status
-	GPIO_InitStruct.Pin =      GPIO_PIN_9;
-	GPIO_InitStruct.Mode =     GPIO_MODE_OUTPUT_PP;    
-	GPIO_InitStruct.Pull =     GPIO_PULLUP;      
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_RESET);
-	HAL_Delay(1);
-	
 	__PRINT_LOG__(__CRITICAL_LEVEL__, "freertos start!\r\n");
 
 	//osThreadDef(TEST_Task, TEST_Task, osPriorityNormal, 0, 1 * configMINIMAL_STACK_SIZE);
@@ -107,8 +93,6 @@ int main(void)
 	//osThreadDef(start_lwip_echo_thread, start_lwip_echo_thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
 	//osThreadCreate(osThread(start_lwip_echo_thread), NULL);
 #endif
-
-	
 
 	/* Start scheduler */
 	osKernelStart();
