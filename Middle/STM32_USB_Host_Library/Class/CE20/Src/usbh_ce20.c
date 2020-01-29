@@ -166,8 +166,14 @@ USBH_StatusTypeDef  USBH_CE20_Transmit(USBH_HandleTypeDef *phost, uint8_t *pbuff
 	{
 		CE20_Handle->pTxData = pbuff;
 		CE20_Handle->TxDataLength = length;  
+		if(0 == (length % CE20_Handle->DataItf.OutEpSize))
+		{
+			CE20_Handle->tx_zero_packet_flag = 1;
+		}
+		
 		CE20_Handle->state = CE20_TRANSFER_DATA;
 		CE20_Handle->data_tx_state = CE20_SEND_DATA; 
+		
 		Status = USBH_OK;
 #if (USBH_USE_OS == 1)
 		osMessagePut ( phost->os_event, USBH_CLASS_EVENT, 0);
@@ -250,9 +256,14 @@ static void CE20_ProcessTransmission(USBH_HandleTypeDef *phost)
 				{
 					CE20_Handle->data_tx_state = CE20_SEND_DATA; 
 				}
-				else
+				else if(1 == CE20_Handle->tx_zero_packet_flag)// send zero packet
 				{
-					CE20_Handle->data_tx_state = CE20_IDLE;    
+					CE20_Handle->tx_zero_packet_flag = 0;
+					CE20_Handle->data_tx_state = CE20_SEND_DATA; 
+				}
+				else
+				{					
+					CE20_Handle->data_tx_state = CE20_IDLE;					
 					USBH_CE20_TransmitCallback(phost);
 				}
 #if (USBH_USE_OS == 1)

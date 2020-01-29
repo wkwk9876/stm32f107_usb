@@ -4,8 +4,6 @@
 
 #define RECV_BUFF_SIZE		(64)
 
-
-
 typedef enum {
 	CE20_APPLICATION_IDLE = 0,
 	CE20_APPLICATION_START,
@@ -16,18 +14,10 @@ typedef enum {
 	CE20_APPLICATION_DISCONNECT,
 }ApplicationTypeDef;
 
-typedef struct _LOGBuffState {
-	//sdram_buffer_map	*buf;
-	__IO uint32_t     	p_read;
-	__IO uint32_t     	p_write;
-}CE20_LOG_BUFF_STATE;
-
-
 typedef struct _ce20_app
 {
 	osMessageQId 			AppliEvent;
 	ApplicationTypeDef 		Appli_state;
-	//CE20_LOG_BUFF_STATE 		log_buf;
 	char 					recv_buf[RECV_BUFF_SIZE + 1];
 	volatile unsigned char	g_stop_flag;
 	unsigned int 			rx_total_num;
