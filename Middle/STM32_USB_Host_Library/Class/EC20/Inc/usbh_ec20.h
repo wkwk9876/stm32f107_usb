@@ -1,5 +1,5 @@
-#ifndef __USBH_CE20_H
-#define __USBH_CE20_H
+#ifndef __USBH_EC20_H
+#define __USBH_EC20_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -10,7 +10,7 @@
 
 
 /* CH340 Class Codes */
-#define USB_CE20_CLASS                                   		(0xff)
+#define USB_EC20_CLASS                                   		(0xff)
 
 /* wValue for SetControlLineState*/
 #define CDC_ACTIVATE_CARRIER_SIGNAL_RTS                         0x0002
@@ -20,32 +20,32 @@
 
 #define LINE_CODING_STRUCTURE_SIZE                              0x07
 
-extern USBH_ClassTypeDef  CE20_Class;
-#define USBH_CE20_CLASS    &CE20_Class
+extern USBH_ClassTypeDef  EC20_Class;
+#define USBH_EC20_CLASS    &EC20_Class
 
 typedef enum
 {
-	CE20_IDLE_STATE= 0,
-	CE20_SET_LINE_CODING_STATE,  
-	CE20_GET_LAST_LINE_CODING_STATE,    
-	CE20_TRANSFER_DATA, 
-	CE20_ERROR_STATE,  
+	EC20_IDLE_STATE= 0,
+	EC20_SET_LINE_CODING_STATE,  
+	EC20_GET_LAST_LINE_CODING_STATE,    
+	EC20_TRANSFER_DATA, 
+	EC20_ERROR_STATE,  
 }
-CE20_StateTypeDef;
+EC20_StateTypeDef;
 
-/* States for CE20 State Machine */
+/* States for EC20 State Machine */
 typedef enum
 {
-	CE20_IDLE= 0,
-	CE20_SEND_DATA,
-	CE20_SEND_DATA_WAIT,
-	CE20_RECEIVE_DATA,
-	CE20_RECEIVE_DATA_WAIT,  
+	EC20_IDLE= 0,
+	EC20_SEND_DATA,
+	EC20_SEND_DATA_WAIT,
+	EC20_RECEIVE_DATA,
+	EC20_RECEIVE_DATA_WAIT,  
 }
-CE20_DataStateTypeDef;
+EC20_DataStateTypeDef;
 
 /*Line coding structure*/
-typedef union _CE20_LineCodingStructure
+typedef union _EC20_LineCodingStructure
 {
 	uint8_t Array[LINE_CODING_STRUCTURE_SIZE];
 
@@ -66,7 +66,7 @@ typedef union _CE20_LineCodingStructure
 		uint8_t                bDataBits;     /* Data bits (5, 6, 7, 8 or 16). */
 	}b;
 }
-CE20_LineCodingTypeDef;
+EC20_LineCodingTypeDef;
 
 /* Header Functional Descriptor
 --------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ typedef struct _FunctionalDescriptorHeader
 		                               Devices Specification release number in
 		                               binary-coded decimal. */
 }
-CE20_HeaderFuncDesc_TypeDef;
+EC20_HeaderFuncDesc_TypeDef;
 
 /* Call Management Functional Descriptor
 --------------------------------------------------------------------------------
@@ -133,7 +133,7 @@ typedef struct _CallMgmtFunctionalDescriptor
 	uint8_t    bmCapabilities;      /* bmCapabilities: D0+D1 */
 	uint8_t    bDataInterface;      /*bDataInterface: 1*/
 }
-CE20_CallMgmtFuncDesc_TypeDef;
+EC20_CallMgmtFuncDesc_TypeDef;
 
 /* Abstract Control Management Functional Descriptor
 --------------------------------------------------------------------------------
@@ -172,7 +172,7 @@ typedef struct _AbstractCntrlMgmtFunctionalDescriptor
 	                              descriptor subtype*/
 	uint8_t    bmCapabilities;      /* The capabilities that this configuration supports */
 }
-CE20_AbstCntrlMgmtFuncDesc_TypeDef;
+EC20_AbstCntrlMgmtFuncDesc_TypeDef;
 
 /* Union Functional Descriptor
 --------------------------------------------------------------------------------
@@ -197,18 +197,18 @@ typedef struct _UnionFunctionalDescriptor
 	                             Data Class interface,*/
 	uint8_t    bSlaveInterface0;   /*Interface number of first slave*/
 }
-CE20_UnionFuncDesc_TypeDef;
+EC20_UnionFuncDesc_TypeDef;
 
-typedef struct _USBH_CE20InterfaceDesc
+typedef struct _USBH_EC20InterfaceDesc
 {
-	CE20_HeaderFuncDesc_TypeDef           CDC_HeaderFuncDesc;
-	CE20_CallMgmtFuncDesc_TypeDef         CDC_CallMgmtFuncDesc;
-	CE20_AbstCntrlMgmtFuncDesc_TypeDef    CDC_AbstCntrlMgmtFuncDesc;
-	CE20_UnionFuncDesc_TypeDef            CDC_UnionFuncDesc;  
+	EC20_HeaderFuncDesc_TypeDef           CDC_HeaderFuncDesc;
+	EC20_CallMgmtFuncDesc_TypeDef         CDC_CallMgmtFuncDesc;
+	EC20_AbstCntrlMgmtFuncDesc_TypeDef    CDC_AbstCntrlMgmtFuncDesc;
+	EC20_UnionFuncDesc_TypeDef            CDC_UnionFuncDesc;  
 }
-CE20_InterfaceDesc_Typedef;
+EC20_InterfaceDesc_Typedef;
 
-/* Structure for CE20 process */
+/* Structure for EC20 process */
 typedef struct
 {
 	uint8_t              NotifPipe; 
@@ -216,7 +216,7 @@ typedef struct
 	uint8_t              buff[8];
 	uint16_t             NotifEpSize;
 }
-CE20_CommItfTypedef ;
+EC20_CommItfTypedef ;
 
 typedef struct
 {
@@ -228,41 +228,41 @@ typedef struct
 	uint16_t             OutEpSize;
 	uint16_t             InEpSize;  
 }
-CE20_DataItfTypedef ;
+EC20_DataItfTypedef ;
 
-/* Structure for CE20 process */
-typedef struct _CE20_Process
+/* Structure for EC20 process */
+typedef struct _EC20_Process
 {
-	CE20_CommItfTypedef				CommItf;
-	CE20_DataItfTypedef				DataItf;
+	EC20_CommItfTypedef				CommItf;
+	EC20_DataItfTypedef				DataItf;
 	uint8_t							*pTxData;
 	uint8_t							*pRxData; 
 	uint32_t						TxDataLength;
 	uint32_t						RxDataLength;	
-	CE20_InterfaceDesc_Typedef 		CDC_Desc;
-	CE20_LineCodingTypeDef 			LineCoding;
-	CE20_LineCodingTypeDef 			*pUserLineCoding;  
-	CE20_StateTypeDef				state;
-	CE20_DataStateTypeDef			data_tx_state;
-	CE20_DataStateTypeDef			data_rx_state; 
+	EC20_InterfaceDesc_Typedef 		CDC_Desc;
+	EC20_LineCodingTypeDef 			LineCoding;
+	EC20_LineCodingTypeDef 			*pUserLineCoding;  
+	EC20_StateTypeDef				state;
+	EC20_DataStateTypeDef			data_tx_state;
+	EC20_DataStateTypeDef			data_rx_state; 
 	uint8_t							tx_zero_packet_flag;
 }
-CE20_HandleTypeDef;
+EC20_HandleTypeDef;
 
-USBH_StatusTypeDef	USBH_CE20_Transmit(USBH_HandleTypeDef *phost, 
+USBH_StatusTypeDef	USBH_EC20_Transmit(USBH_HandleTypeDef *phost, 
 									  uint8_t *pbuff, 
 									  uint32_t length);
 
-USBH_StatusTypeDef	USBH_CE20_Receive(USBH_HandleTypeDef *phost, 
+USBH_StatusTypeDef	USBH_EC20_Receive(USBH_HandleTypeDef *phost, 
 									 uint8_t *pbuff, 
 									 uint32_t length);
 
-uint16_t			USBH_CE20_GetLastReceivedDataSize(USBH_HandleTypeDef *phost);
+uint16_t			USBH_EC20_GetLastReceivedDataSize(USBH_HandleTypeDef *phost);
 
 
-void USBH_CE20_TransmitCallback(USBH_HandleTypeDef *phost);
+void USBH_EC20_TransmitCallback(USBH_HandleTypeDef *phost);
 
-void USBH_CE20_ReceiveCallback(USBH_HandleTypeDef *phost);
+void USBH_EC20_ReceiveCallback(USBH_HandleTypeDef *phost);
 
 #ifdef __cplusplus
 }
