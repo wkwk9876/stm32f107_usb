@@ -6,6 +6,34 @@
 
 #include "app_ec20.h"
 
+//#define __EC20_DEBUG__
+
+#define NUM_OF_ARRAY(x)			(sizeof(x) / sizeof(x[0]))
+
+#define _CMD_TESTING_			"ati;+csub"
+#define _CMD_SMS_DONE_			"\r\n+QIND: SMS DONE"
+#define _CMD_PB_DONE_			"\r\n+QIND: PB DONE"
+#define _CMD_QUERY_CARD_		"AT+CPIN?"
+#define _CMD_QUERY_CS_			"AT+CREG?"
+#define _CMD_QUERY_PS_			"AT+CGREG?"
+#define _CMD_CONFIG_PDP_		"AT+QICSGP=1"
+#define _CMD_ACTIVATE_PDP_		"AT+QIACT=1"
+#define _CMD_RUNNING_			"AT+QPING=1,\"www.baidu.com\""
+
+char * ec20_tx_cmd[EC20_APPLICATION_MAX_NUM] = 
+{
+	[EC20_APPLICATION_QUERY_CARD] 	= _CMD_QUERY_CARD_,
+	[EC20_APPLICATION_QUERY_CS] 	= _CMD_QUERY_CS_,
+	[EC20_APPLICATION_QUERY_PS] 	= _CMD_QUERY_PS_,
+	[EC20_APPLICATION_CONFIG_PDP] 	= _CMD_CONFIG_PDP_,
+	[EC20_APPLICATION_ACTIVATE_PDP] = _CMD_ACTIVATE_PDP_,
+	[EC20_APPLICATION_RUNNING] 		= _CMD_RUNNING_,
+};
+
+ec20_cmd cmd[];
+
+int	ec20_recv_cmd_select(USBH_HandleTypeDef *phost);
+
 USBH_StatusTypeDef delete_EC20_Application(USBH_HandleTypeDef *phost);
 
 USBH_StatusTypeDef new_EC20_Application(USBH_HandleTypeDef *phost)
@@ -36,6 +64,7 @@ USBH_StatusTypeDef new_EC20_Application(USBH_HandleTypeDef *phost)
 		return USBH_FAIL;
 	}
 
+	app_data->ec20_recvdata = ec20_recv_cmd_select;
 	app_data->Appli_state = EC20_APPLICATION_IDLE;
 
 	phost->app_data = app_data;
@@ -48,19 +77,41 @@ void USBH_EC20_ReceiveCallback(USBH_HandleTypeDef *phost)
 {
 	ec20_app 				*app_data		= NULL;
 	uint16_t 				i;
+	int						ret_val			= -1;
 
-	if(NULL == phost->app_data)
+	if(NULL == phost || NULL == phost->app_data)
 		return;
 
 	app_data = (ec20_app *)phost->app_data;
 
-	for(i = 0; i < USBH_EC20_GetLastReceivedDataSize(phost); ++i)
+	if(NULL != app_data->ec20_recvdata)
 	{
-		putchar(app_data->recv_buf[i]);
+		ret_val = app_data->ec20_recvdata(phost);
 	}
 	
-    //memset(app_data->recv_buf, 0, RECV_BUFF_SIZE);
+	if(-1 == ret_val)
+	{
+		for(i = 0; i < USBH_EC20_GetLastReceivedDataSize(phost); ++i)
+		{
+			putchar(app_data->recv_buf[i]);
+		}
+	}
+	
+    memset(app_data->recv_buf, 0, RECV_BUFF_SIZE + 1);
 	USBH_EC20_Receive(phost, (unsigned char *)app_data->recv_buf, RECV_BUFF_SIZE);
+}
+
+static void EC20_send_data(USBH_HandleTypeDef *phost, uint8_t *pbuff, uint32_t buff_size, char *cmd)
+{
+	unsigned int len = snprintf((char *)pbuff, buff_size, "%s\r\n", cmd);
+	ec20_app 	*app_data	= NULL;
+	
+	app_data = (ec20_app *)phost->app_data;
+	
+	USBH_EC20_Transmit(phost, (unsigned char *)pbuff, strlen((char *)pbuff));
+	app_data->tx_total_num += len;
+	
+	printf("Send(%d)\r\n", app_data->tx_total_num);
 }
 
 static void Start_EC20_Application_Thread(void const *argument)
@@ -69,7 +120,7 @@ static void Start_EC20_Application_Thread(void const *argument)
 	ec20_app 					*app_data	= NULL;
 	osEvent 					event;
 	//EC20_AttachStateTypeDef 	attach_state;
-	EC20_HandleTypeDef 			*EC20_Handle;
+	//EC20_HandleTypeDef 			*EC20_Handle;
 	//unsigned int 				count = 0;
 	char 						send_buf[64];
 
@@ -101,41 +152,57 @@ static void Start_EC20_Application_Thread(void const *argument)
 
 			case EC20_APPLICATION_READY:
 				app_data->Appli_state = EC20_APPLICATION_READY;
-				//if(USBH_OK == )//check ec20 driver init complete
-				{
-					osMessagePut(app_data->AppliEvent, EC20_APPLICATION_RUNNING, 0);
-				}
+				EC20_send_data(phost, (unsigned char *)send_buf, 64, _CMD_TESTING_);
+				break;
+
+			case EC20_APPLICATION_SMS_DONE:
+				__PRINT_LOG__(__CRITICAL_LEVEL__, "Waiting SMS_DONE!\r\n");
+				app_data->Appli_state = EC20_APPLICATION_SMS_DONE;
+				break;
+
+			/*case EC20_APPLICATION_PB_DONE:
+				__PRINT_LOG__(__CRITICAL_LEVEL__, "Waiting PB_DONE!\r\n");
+				app_data->Appli_state = EC20_APPLICATION_PB_DONE;
+				break;*/
+
+			case EC20_APPLICATION_QUERY_CARD:
+				app_data->Appli_state = EC20_APPLICATION_QUERY_CARD;
+				EC20_send_data(phost, (unsigned char *)send_buf, 64, _CMD_QUERY_CARD_);
+				break;
+
+			case EC20_APPLICATION_QUERY_CS:
+				app_data->Appli_state = EC20_APPLICATION_QUERY_CS;
+				EC20_send_data(phost, (unsigned char *)send_buf, 64, _CMD_QUERY_CS_);
+				break;
+
+			case EC20_APPLICATION_QUERY_PS:
+				app_data->Appli_state = EC20_APPLICATION_QUERY_PS;
+				EC20_send_data(phost, (unsigned char *)send_buf, 64, _CMD_QUERY_PS_);
+				break;
+
+			case EC20_APPLICATION_CONFIG_PDP:
+				app_data->Appli_state = EC20_APPLICATION_CONFIG_PDP;
+				EC20_send_data(phost, (unsigned char *)send_buf, 64, _CMD_CONFIG_PDP_);
+				break;
+
+			case EC20_APPLICATION_ACTIVATE_PDP:
+				app_data->Appli_state = EC20_APPLICATION_ACTIVATE_PDP;
+				osDelay(1000);
+				EC20_send_data(phost, (unsigned char *)send_buf, 64, _CMD_ACTIVATE_PDP_);
 				break;
 
 			case EC20_APPLICATION_RUNNING:
-				EC20_Handle =  (EC20_HandleTypeDef*) phost->pClassData[0];
 				app_data->Appli_state = EC20_APPLICATION_RUNNING;
-				if(EC20_IDLE_STATE == EC20_Handle->state)
-				{  			
-				    memset(app_data->recv_buf, 0, RECV_BUFF_SIZE);
-					USBH_EC20_Receive(phost, (unsigned char *)(app_data->recv_buf), RECV_BUFF_SIZE);           
-				    while(0 == app_data->g_stop_flag)
-				    {
-						unsigned int len = snprintf(send_buf, 64, "ati;+csub\r\n");//ati;+csub//AT+CREG?
-						USBH_EC20_Transmit(phost, (unsigned char *)send_buf, strlen(send_buf));
-
-						app_data->tx_total_num += len;
-						printf("Send(%d)\r\n", app_data->tx_total_num);
-						//__PRINT_LOG__(__CRITICAL_LEVEL__, "Send(%d): %s", tx_total_num, send_buf);
-
-						osDelay(1000);			  
-				    }  
-				}
-				else
-				{
-					osMessagePut(app_data->AppliEvent, EC20_APPLICATION_RUNNING, 0);
-				}
+				osDelay(1000);
+				EC20_send_data(phost, (unsigned char *)send_buf, 64, _CMD_RUNNING_);
 				break;
 
 			default:
 				break;
 			}
 		}
+
+		osDelay(200);
 	}
 
 	__PRINT_LOG__(__CRITICAL_LEVEL__, "app stop!\r\n");
@@ -158,6 +225,8 @@ USBH_StatusTypeDef start_EC20_Application(USBH_HandleTypeDef *phost)
 
 	osThreadDef(EC20_Send_Thread, Start_EC20_Application_Thread, osPriorityNormal, 0, 2 * configMINIMAL_STACK_SIZE);
     app_data->EC20_Send_Thread_id = osThreadCreate(osThread(EC20_Send_Thread), phost);
+
+	USBH_EC20_Receive(phost, (unsigned char *)(app_data->recv_buf), RECV_BUFF_SIZE);     
 
 	osMessagePut(app_data->AppliEvent, EC20_APPLICATION_READY, 0);
 
@@ -214,6 +283,240 @@ USBH_StatusTypeDef delete_EC20_Application(USBH_HandleTypeDef *phost)
 	phost->app_data = NULL;
 
 	return USBH_OK;
+}
+
+int	ec20_recv_ati(USBH_HandleTypeDef *phost)
+{
+	ec20_app 				*app_data		= NULL;
+
+	if(NULL == phost->app_data)
+		return -1;
+
+	app_data = (ec20_app *)phost->app_data;
+
+#ifdef __EC20_DEBUG__
+	for(int i = 0; i < USBH_EC20_GetLastReceivedDataSize(phost); ++i)
+	{
+		putchar(app_data->recv_buf[i]);
+	}
+#endif
+	memset(app_data->recv_buf, 0, RECV_BUFF_SIZE + 1);
+
+	if(RECV_BUFF_SIZE == USBH_EC20_GetLastReceivedDataSize(phost))
+	{
+		app_data->ec20_recvdata = ec20_recv_ati;
+	}
+	else
+	{
+		app_data->ec20_recvdata = ec20_recv_cmd_select;
+		osMessagePut(app_data->AppliEvent, app_data->Appli_state + 1, 0);
+	}
+
+	return 0;
+}
+
+int	ec20_recv_init_done(USBH_HandleTypeDef *phost)
+{
+	ec20_app 				*app_data		= NULL;
+
+	if(NULL == phost->app_data)
+		return -1;
+
+	app_data = (ec20_app *)phost->app_data;
+	
+#ifdef __EC20_DEBUG__
+	for(int i = 0; i < USBH_EC20_GetLastReceivedDataSize(phost); ++i)
+	{
+		putchar(app_data->recv_buf[i]);
+	}
+#endif
+	memset(app_data->recv_buf, 0, RECV_BUFF_SIZE + 1);
+
+	app_data->ec20_recvdata = ec20_recv_cmd_select;
+	osMessagePut(app_data->AppliEvent, app_data->Appli_state + 1, 0);//jump to next state
+
+	return 0;
+}
+
+int	ec20_recv_general(USBH_HandleTypeDef *phost)
+{
+	ec20_app 				*app_data		= NULL;
+
+	if(NULL == phost->app_data)
+		return -1;
+
+	app_data = (ec20_app *)phost->app_data;
+
+	if(RECV_BUFF_SIZE == USBH_EC20_GetLastReceivedDataSize(phost))// data recv no complete
+	{
+		if(NULL == app_data->result_buff)//first segment
+		{
+			if(NULL != strstr(app_data->recv_buf, cmd[app_data->cmd_index].result))
+			{
+				app_data->result_flag = 1;
+			}
+			else
+			{
+				app_data->result_buff = (char *)pvPortMalloc(strlen(cmd[app_data->cmd_index].result) + RECV_BUFF_SIZE + 1);//add 1 for \0
+				if(NULL == app_data->result_buff)
+				{
+					__PRINT_LOG__(__ERR_LEVEL__, "malloc failed!\r\n");
+				}
+				else
+				{
+					memset(app_data->result_buff, 0, strlen(cmd[app_data->cmd_index].result) + RECV_BUFF_SIZE + 1);
+					memcpy(app_data->result_buff,
+							app_data->recv_buf + (RECV_BUFF_SIZE - strlen(cmd[app_data->cmd_index].result)),
+							strlen(cmd[app_data->cmd_index].result));
+				}
+			}
+		}
+		else if(0 == app_data->result_flag)//other segment
+		{
+			memcpy(app_data->result_buff + strlen(cmd[app_data->cmd_index].result),	app_data->recv_buf, RECV_BUFF_SIZE);
+			if(NULL != strstr(app_data->result_buff, cmd[app_data->cmd_index].result))
+			{
+				app_data->result_flag = 1;
+			}
+			else
+			{
+				memset(app_data->result_buff, 0, strlen(cmd[app_data->cmd_index].result) + RECV_BUFF_SIZE + 1);
+				memcpy(app_data->result_buff,
+						app_data->recv_buf + (RECV_BUFF_SIZE - strlen(cmd[app_data->cmd_index].result)),
+						strlen(cmd[app_data->cmd_index].result));
+			}
+		}
+		app_data->ec20_recvdata = ec20_recv_general;
+	}
+	else//last segment or frist segment
+	{
+		if(0 == app_data->result_flag && NULL == app_data->result_buff)//frist segment
+		{
+			if(NULL != strstr(app_data->recv_buf, cmd[app_data->cmd_index].result))
+			{
+				app_data->result_flag = 1;
+			}
+		}
+		else if(0 == app_data->result_flag && NULL != app_data->result_buff)//last segment
+		{
+			memcpy(app_data->result_buff + strlen(cmd[app_data->cmd_index].result),	app_data->recv_buf, RECV_BUFF_SIZE);
+			if(NULL != strstr(app_data->result_buff, cmd[app_data->cmd_index].result))
+			{
+				app_data->result_flag = 1;
+			}
+		}
+		//else is 1 == app_data->result_flag
+
+		if(NULL != app_data->result_buff)
+		{
+			vPortFree(app_data->result_buff);
+			app_data->result_buff = NULL;
+		}
+
+		if(1 == app_data->result_flag)
+		{			
+			app_data->result_flag = 0;
+			
+#ifdef __EC20_DEBUG__
+			printf("%s(len:%d)\r\n", cmd[app_data->cmd_index].name, USBH_EC20_GetLastReceivedDataSize(phost));
+			for(int i = 0; i < USBH_EC20_GetLastReceivedDataSize(phost); ++i)
+			{
+				putchar(app_data->recv_buf[i]);
+			}
+#endif
+			memset(app_data->recv_buf, 0, RECV_BUFF_SIZE + 1);
+			
+			app_data->ec20_recvdata = ec20_recv_cmd_select;
+			osMessagePut(app_data->AppliEvent, app_data->Appli_state + 1, 0);//jump to next state
+		}
+		else
+		{
+			app_data->result_flag = 0;
+			__PRINT_LOG__(__ERR_LEVEL__, "cmd: %s return failed!\r\n", cmd[app_data->cmd_index].name);
+			for(int i = 0; i < USBH_EC20_GetLastReceivedDataSize(phost); ++i)
+			{
+				putchar(app_data->recv_buf[i]);
+			}
+			memset(app_data->recv_buf, 0, RECV_BUFF_SIZE + 1);
+			
+			app_data->ec20_recvdata = ec20_recv_cmd_select;
+			osMessagePut(app_data->AppliEvent, app_data->Appli_state, 0);// repeat this state
+		}
+	}
+
+	return 0;
+}
+
+int	ec20_recv_running(USBH_HandleTypeDef *phost)
+{
+	ec20_app 				*app_data		= NULL;
+	uint16_t 				i;
+
+	if(NULL == phost->app_data)
+		return -1;
+
+	app_data = (ec20_app *)phost->app_data;
+
+	printf("%s\r\n", cmd[app_data->cmd_index].name);
+	for(i = 0; i < USBH_EC20_GetLastReceivedDataSize(phost); ++i)
+	{
+		putchar(app_data->recv_buf[i]);
+	}
+	memset(app_data->recv_buf, 0, RECV_BUFF_SIZE + 1);
+
+	if(RECV_BUFF_SIZE == USBH_EC20_GetLastReceivedDataSize(phost))
+	{
+		app_data->ec20_recvdata = ec20_recv_running;
+	}
+	else
+	{
+		app_data->ec20_recvdata = ec20_recv_cmd_select;
+		osMessagePut(app_data->AppliEvent, EC20_APPLICATION_RUNNING, 0);
+	}
+
+	return 0;
+}
+
+ec20_cmd cmd[] = 
+{
+	{_CMD_TESTING_, 		"OK", 		ec20_recv_ati},	
+	{_CMD_SMS_DONE_,		NULL,		ec20_recv_init_done},
+	//{_CMD_PB_DONE_,			NULL,		ec20_recv_init_done},
+	{_CMD_QUERY_CARD_, 		"READY", 	ec20_recv_general},
+	{_CMD_QUERY_CS_, 		"OK", 		ec20_recv_general},
+	{_CMD_QUERY_PS_, 		"OK", 		ec20_recv_general},
+	{_CMD_CONFIG_PDP_, 		"OK", 		ec20_recv_general},
+	{_CMD_ACTIVATE_PDP_, 	"OK", 		ec20_recv_general},
+	{_CMD_RUNNING_, 		"OK", 		ec20_recv_running},
+};
+
+int	ec20_recv_cmd_select(USBH_HandleTypeDef *phost)
+{
+	ec20_app 				*app_data		= NULL;
+	uint16_t 				i;
+
+	if(NULL == phost || NULL == phost->app_data)	
+		return -2;
+
+	app_data = (ec20_app *)phost->app_data;
+	for(i = 0; i < NUM_OF_ARRAY(cmd); ++i)
+	{
+		if(0 == strncmp(app_data->recv_buf, cmd[i].name, strlen(cmd[i].name)))
+		{
+			//printf("match index: %d name: %s\r\n", i, cmd[i].name);
+			app_data->ec20_recvdata = cmd[i].ec20_recvdata;
+			app_data->cmd_index		= i;
+			break;
+		}
+	}
+
+	if(NUM_OF_ARRAY(cmd) == i)
+	{
+		__PRINT_LOG__(__ERR_LEVEL__, "undef cmd(len:%d)\r\n", USBH_EC20_GetLastReceivedDataSize(phost));
+		return -1;
+	}
+
+	return 0;
 }
 
 Usb_Application_Class app_ec20 =

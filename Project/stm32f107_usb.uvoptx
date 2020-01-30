@@ -899,8 +899,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\User\app_ce20.c</PathWithFileName>
-      <FilenameWithoutPath>app_ce20.c</FilenameWithoutPath>
+      <PathWithFileName>..\User\app_ec20.c</PathWithFileName>
+      <FilenameWithoutPath>app_ec20.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1087,7 +1087,7 @@
   </Group>
 
   <Group>
-    <GroupName>Middle/USBH/Class/CE20</GroupName>
+    <GroupName>Middle/USBH/Class/EC20</GroupName>
     <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
@@ -1099,8 +1099,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\Middle\STM32_USB_Host_Library\Class\CE20\Src\usbh_ce20.c</PathWithFileName>
-      <FilenameWithoutPath>usbh_ce20.c</FilenameWithoutPath>
+      <PathWithFileName>..\Middle\STM32_USB_Host_Library\Class\EC20\Src\usbh_ec20.c</PathWithFileName>
+      <FilenameWithoutPath>usbh_ec20.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
