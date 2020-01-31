@@ -64,7 +64,7 @@ static void USBH_UserProcess(USBH_HandleTypeDef * phost, uint8_t id)
 		{
 			Usb_Application_Class * app_class = (Usb_Application_Class *)(phost->app_class);
 			app_class->stop_app(phost);
-			//app_class->delete_app(phost);
+			app_class->delete_app(phost);
 		}
 		break;
 
@@ -98,7 +98,7 @@ int init_usb_host(USBH_HandleTypeDef * phost)
 	return ret;
 }
 
-void ec20PowerInit()
+void ec20PowerInit(void)
 {
     /* 1、初始化各个管脚。 */
     GPIO_InitTypeDef  GPIO_InitStructure;

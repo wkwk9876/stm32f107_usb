@@ -1,10 +1,14 @@
 #include "usbh_ec20.h"
 #include "systemlog.h"
 
+//#define __USB_EC20_DEBUG__
+
 #define RX_BUF_SIZE     64
 
-//char tx_buf[] = {"ati;+csub\r\n"};
-//char rx_buf[RX_BUF_SIZE];
+#ifdef __USB_EC20_DEBUG__
+char tx_buf[] = {"ati;+csub\r\n"};
+char rx_buf[RX_BUF_SIZE];
+#endif
 
 /**
 * @brief  The function informs user that data have been received
@@ -23,14 +27,16 @@ __weak void USBH_EC20_TransmitCallback(USBH_HandleTypeDef *phost)
 */
 __weak void USBH_EC20_ReceiveCallback(USBH_HandleTypeDef *phost)
 {
-	/*uint16_t i;
+#ifdef __USB_EC20_DEBUG__
+	uint16_t i;
 	//printf("Recv count %d\r\n", USBH_CDC_GetLastReceivedDataSize(phost));
 	for(i = 0; i < USBH_CDC_GetLastReceivedDataSize(phost); ++i)
 	{
 		putchar(rx_buf[i]);
 	}
 	//printf("\r\n");
-	USBH_EC20_Receive(phost, rx_buf, RX_BUF_SIZE);*/
+	USBH_EC20_Receive(phost, rx_buf, RX_BUF_SIZE);
+#endif
 }
 
 void print_ep_desc(USBH_EpDescTypeDef ep)
@@ -54,6 +60,13 @@ static USBH_StatusTypeDef USBH_EC20_InterfaceInit  (USBH_HandleTypeDef *phost)
 	
 	USBH_SelectInterface (phost, interface);
 	phost->pClassData[0] = (EC20_HandleTypeDef *)USBH_malloc (sizeof(EC20_HandleTypeDef));
+	if(NULL == phost->pClassData[0])
+	{
+		printf("USBH_EC20_InterfaceInit malloc failed!\r\n");
+		return status;
+	}
+	memset(phost->pClassData[0], 0, sizeof(EC20_HandleTypeDef));
+	
 	EC20_Handle =	(EC20_HandleTypeDef*) phost->pClassData[0]; 
 
 	/*Collect the notification endpoint address and length*/
@@ -116,20 +129,59 @@ static USBH_StatusTypeDef USBH_EC20_InterfaceInit  (USBH_HandleTypeDef *phost)
 				EC20_Handle->DataItf.InEpSize);
 
 	EC20_Handle->state = EC20_IDLE_STATE;
-	//EC20_Handle->attach_state = CH340_READ_VENDOR_VERSION_STATE;
+	EC20_Handle->data_tx_state = EC20_IDLE;
+	EC20_Handle->data_rx_state = EC20_IDLE;
 
 	USBH_LL_SetToggle  (phost, EC20_Handle->DataItf.OutPipe,0);
 	USBH_LL_SetToggle  (phost, EC20_Handle->DataItf.InPipe,0);   
 	status = USBH_OK; 
 
-	//USBH_EC20_Transmit(phost, tx_buf, strlen(tx_buf));
-	//USBH_EC20_Receive(phost, rx_buf, RX_BUF_SIZE);
-	
+#ifdef __USB_EC20_DEBUG__
+	USBH_EC20_Transmit(phost, tx_buf, strlen(tx_buf));
+	USBH_EC20_Receive(phost, rx_buf, RX_BUF_SIZE);
+#endif
+
 	return status;
 }
 
 static USBH_StatusTypeDef USBH_EC20_InterfaceDeInit  (USBH_HandleTypeDef *phost)
 {
+	EC20_HandleTypeDef *EC20_Handle =	(EC20_HandleTypeDef*) phost->pClassData[0]; 
+
+	while(NULL != phost->app_data)
+	{
+		USBH_Delay(10);
+	}
+
+	if (EC20_Handle->CommItf.NotifPipe && 0xff != EC20_Handle->CommItf.NotifPipe)
+	{
+		USBH_ClosePipe(phost, EC20_Handle->CommItf.NotifPipe);
+		USBH_FreePipe  (phost, EC20_Handle->CommItf.NotifPipe);
+		EC20_Handle->CommItf.NotifPipe = 0;     /* Reset the Channel as Free */
+	}
+
+	if (EC20_Handle->DataItf.InPipe && 0xff != EC20_Handle->DataItf.InPipe)
+	{
+		USBH_ClosePipe(phost, EC20_Handle->DataItf.InPipe);
+		USBH_FreePipe  (phost, EC20_Handle->DataItf.InPipe);
+		EC20_Handle->DataItf.InPipe = 0;     /* Reset the Channel as Free */
+	}
+
+	if (EC20_Handle->DataItf.OutPipe && 0xff != EC20_Handle->DataItf.OutPipe)
+	{
+		USBH_ClosePipe(phost, EC20_Handle->DataItf.OutPipe);
+		USBH_FreePipe  (phost, EC20_Handle->DataItf.OutPipe);
+		EC20_Handle->DataItf.OutPipe = 0;     /* Reset the Channel as Free */
+	} 
+
+	if(phost->pClassData[0])
+	{
+		USBH_free (phost->pClassData[0]);
+		phost->pClassData[0] = 0;
+	}
+
+	USBH_Free_One_Address(phost);
+
 	return USBH_OK;
 }
 
@@ -164,20 +216,23 @@ USBH_StatusTypeDef  USBH_EC20_Transmit(USBH_HandleTypeDef *phost, uint8_t *pbuff
 
 	if((EC20_Handle->state == EC20_IDLE_STATE) || (EC20_Handle->state == EC20_TRANSFER_DATA))
 	{
-		EC20_Handle->pTxData = pbuff;
-		EC20_Handle->TxDataLength = length;  
-		if(0 == (length % EC20_Handle->DataItf.OutEpSize))
+		if(EC20_IDLE == EC20_Handle->data_tx_state)
 		{
-			EC20_Handle->tx_zero_packet_flag = 1;
-		}
-		
-		EC20_Handle->state = EC20_TRANSFER_DATA;
-		EC20_Handle->data_tx_state = EC20_SEND_DATA; 
-		
-		Status = USBH_OK;
+			EC20_Handle->pTxData = pbuff;
+			EC20_Handle->TxDataLength = length;  
+			if(0 == (length % EC20_Handle->DataItf.OutEpSize))
+			{
+				EC20_Handle->tx_zero_packet_flag = 1;
+			}
+			
+			EC20_Handle->state = EC20_TRANSFER_DATA;
+			EC20_Handle->data_tx_state = EC20_SEND_DATA; 
+			
+			Status = USBH_OK;
 #if (USBH_USE_OS == 1)
-		osMessagePut ( phost->os_event, USBH_CLASS_EVENT, 0);
-#endif      
+			osMessagePut ( phost->os_event, USBH_CLASS_EVENT, 0);
+#endif    
+		}
 	}
 	return Status;    
 }
@@ -194,14 +249,17 @@ USBH_StatusTypeDef  USBH_EC20_Receive(USBH_HandleTypeDef *phost, uint8_t *pbuff,
 
 	if((EC20_Handle->state == EC20_IDLE_STATE) || (EC20_Handle->state == EC20_TRANSFER_DATA))
 	{
-		EC20_Handle->pRxData = pbuff;
-		EC20_Handle->RxDataLength = length;  
-		EC20_Handle->state = EC20_TRANSFER_DATA;
-		EC20_Handle->data_rx_state = EC20_RECEIVE_DATA;     
-		Status = USBH_OK;
+		if(EC20_IDLE == EC20_Handle->data_rx_state)
+		{
+			EC20_Handle->pRxData = pbuff;
+			EC20_Handle->RxDataLength = length;  
+			EC20_Handle->state = EC20_TRANSFER_DATA;
+			EC20_Handle->data_rx_state = EC20_RECEIVE_DATA;     
+			Status = USBH_OK;
 #if (USBH_USE_OS == 1)
-		osMessagePut ( phost->os_event, USBH_CLASS_EVENT, 0);
-#endif        
+			osMessagePut ( phost->os_event, USBH_CLASS_EVENT, 0);
+#endif 
+		}
 	}
 	return Status;    
 } 

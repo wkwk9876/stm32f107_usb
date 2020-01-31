@@ -36,6 +36,7 @@ typedef struct _ec20_app
 	int						cmd_index;
 	char					*result_buff;
 	int						result_flag;
+	unsigned char			timeout_times;
 }ec20_app;
 
 typedef struct _ec20_cmd

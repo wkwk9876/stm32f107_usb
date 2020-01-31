@@ -152,7 +152,7 @@
           <Type>0</Type>
           <LineNumber>121</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134298616</Address>
+          <Address>134315260</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -166,18 +166,34 @@
         <Bp>
           <Number>1</Number>
           <Type>0</Type>
-          <LineNumber>630</LineNumber>
+          <LineNumber>153</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134243220</Address>
+          <Address>134234364</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\Middle\STM32_USB_Host_Library\Core\Src\usbh_core.c</Filename>
+          <Filename>..\User\app_ec20.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\stm32f107_usb\../Middle/STM32_USB_Host_Library/Core/Src/usbh_core.c\630</Expression>
+          <Expression>\\stm32f107_usb\../User/app_ec20.c\153</Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>109</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134220428</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\User\app_ec20.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\stm32f107_usb\../User/app_ec20.c\109</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
