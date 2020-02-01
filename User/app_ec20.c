@@ -350,6 +350,7 @@ USBH_StatusTypeDef delete_EC20_Application(USBH_HandleTypeDef *phost)
 	{
 		__PRINT_LOG__(__CRITICAL_LEVEL__, "app_data is null!\r\n");
 	}
+	phost->app_data = NULL;
 
 	app_data->ec20_recvdata = NULL;
 
@@ -362,8 +363,6 @@ USBH_StatusTypeDef delete_EC20_Application(USBH_HandleTypeDef *phost)
 	osMessageDelete(app_data->AppliEvent);
 	vPortFree(app_data);
 	app_data = NULL;
-
-	phost->app_data = NULL;
 
 	return USBH_OK;
 }

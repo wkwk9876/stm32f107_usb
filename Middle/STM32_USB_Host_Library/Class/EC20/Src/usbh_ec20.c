@@ -212,7 +212,12 @@ uint16_t USBH_EC20_GetLastReceivedDataSize(USBH_HandleTypeDef *phost)
 USBH_StatusTypeDef  USBH_EC20_Transmit(USBH_HandleTypeDef *phost, uint8_t *pbuff, uint32_t length)
 {
 	USBH_StatusTypeDef Status = USBH_BUSY;
-	EC20_HandleTypeDef *EC20_Handle =	(EC20_HandleTypeDef*) phost->pClassData[0]; 
+	EC20_HandleTypeDef *EC20_Handle = NULL;
+
+	if(NULL == phost || NULL == pbuff)
+		return USBH_FAIL;
+
+	EC20_Handle =	(EC20_HandleTypeDef*) phost->pClassData[0];
 
 	if((EC20_Handle->state == EC20_IDLE_STATE) || (EC20_Handle->state == EC20_TRANSFER_DATA))
 	{
@@ -245,7 +250,12 @@ USBH_StatusTypeDef  USBH_EC20_Transmit(USBH_HandleTypeDef *phost, uint8_t *pbuff
 USBH_StatusTypeDef  USBH_EC20_Receive(USBH_HandleTypeDef *phost, uint8_t *pbuff, uint32_t length)
 {
 	USBH_StatusTypeDef Status = USBH_BUSY;
-	EC20_HandleTypeDef *EC20_Handle =	(EC20_HandleTypeDef*) phost->pClassData[0]; 
+	EC20_HandleTypeDef *EC20_Handle = NULL;
+
+	if(NULL == phost || NULL == pbuff)
+		return USBH_FAIL;
+
+	EC20_Handle =	(EC20_HandleTypeDef*) phost->pClassData[0]; 
 
 	if((EC20_Handle->state == EC20_IDLE_STATE) || (EC20_Handle->state == EC20_TRANSFER_DATA))
 	{
