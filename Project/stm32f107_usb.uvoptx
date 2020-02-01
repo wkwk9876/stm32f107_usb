@@ -152,7 +152,7 @@
           <Type>0</Type>
           <LineNumber>121</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134315260</Address>
+          <Address>134302280</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -162,38 +162,6 @@
           <Filename>..\User\test_lwip_seq_api.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\stm32f107_usb\../User/test_lwip_seq_api.c\121</Expression>
-        </Bp>
-        <Bp>
-          <Number>1</Number>
-          <Type>0</Type>
-          <LineNumber>153</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134234364</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\User\app_ec20.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\stm32f107_usb\../User/app_ec20.c\153</Expression>
-        </Bp>
-        <Bp>
-          <Number>2</Number>
-          <Type>0</Type>
-          <LineNumber>109</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>134220428</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\User\app_ec20.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\stm32f107_usb\../User/app_ec20.c\109</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>

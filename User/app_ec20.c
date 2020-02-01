@@ -20,7 +20,7 @@
 #define _CMD_ACTIVATE_PDP_		"AT+QIACT=1"
 #define _CMD_RUNNING_			"AT+QPING=1,\"www.baidu.com\""
 
-#define MAX_TIME_OUT			(60 * 1000)
+#define MAX_TIME_OUT			(30 * 1000)
 #define MAX_TIME_OUT_NUM		(5)
 
 
@@ -228,21 +228,20 @@ static void Start_EC20_Application_Thread(void const *argument)
 				break;
 			}
 		}
-		else
+		else if(app_data->timeout_times <= MAX_TIME_OUT_NUM)
 		{
-			if(app_data->timeout_times > MAX_TIME_OUT_NUM)
-			{
-				__PRINT_LOG__(__ERR_LEVEL__, "Reach MAX TIME OUT NUM!!! Goto reset EC20!\r\n");
-				app_data->timeout_times = 0;
-				ec20PowerInit();//reset ec20 will lead to usb disconnect and connect again
-			}
-			else
-			{
 				__PRINT_LOG__(__ERR_LEVEL__, "Waiting time out!!! Repeat state: %d!\r\n", app_data->Appli_state);
 				++app_data->timeout_times;
 				osMessagePut(app_data->AppliEvent, app_data->Appli_state, 0);// repeat this state
-			}
-			
+		}
+
+		if(app_data->timeout_times > MAX_TIME_OUT_NUM)
+		{
+			__PRINT_LOG__(__ERR_LEVEL__, "Reach MAX TIME OUT NUM!!! Goto reset EC20!\r\n");
+			app_data->timeout_times = 0;
+			ec20PowerInit();//reset ec20 will lead to usb disconnect and connect again
+			__PRINT_LOG__(__ERR_LEVEL__, "Reset EC20 completed!\r\n");
+			break;
 		}
 
 		if(USBH_OK != Status)
@@ -256,6 +255,7 @@ static void Start_EC20_Application_Thread(void const *argument)
 		}
 	}
 
+	app_data->g_stop_flag = 0;
 	__PRINT_LOG__(__CRITICAL_LEVEL__, "app stop!\r\n");
 
 	//delete_EC20_Application(phost);
@@ -296,6 +296,7 @@ USBH_StatusTypeDef start_EC20_Application(USBH_HandleTypeDef *phost)
 USBH_StatusTypeDef stop_EC20_Application(USBH_HandleTypeDef *phost)
 {
 	ec20_app 					*app_data	= NULL;
+	unsigned char				i = 0;
 	
 	if(NULL == phost)
 	{
@@ -312,6 +313,15 @@ USBH_StatusTypeDef stop_EC20_Application(USBH_HandleTypeDef *phost)
 
 	app_data->g_stop_flag = 1;
 	osMessagePut(app_data->AppliEvent, EC20_APPLICATION_DISCONNECT, 0);
+
+	// if we receive disconnect interrupt, indicate that EC20 is closeing
+	// fix me: if we can not wait EC20 status pin, we just stop it.
+	while(1 == app_data->g_stop_flag && i < 10)
+	{
+		__PRINT_LOG__(__CRITICAL_LEVEL__, "Waiting Application Stop!\r\n");
+		++i;
+		HAL_Delay(500);
+	}
 
 	//if thread Terminate itself,the resource of this thread will be release
 	//only when the system in idle. If the system no idle status, the resource
@@ -510,9 +520,10 @@ int	ec20_recv_general(USBH_HandleTypeDef *phost)
 		else
 		{
 			app_data->result_flag = 0;
-			__PRINT_LOG__(__ERR_LEVEL__, "cmd: %s return failed!(len:%d)\r\n", 
+			__PRINT_LOG__(__ERR_LEVEL__, "cmd: %s return failed!(len:%d timeout:%d)\r\n", 
 											cmd[app_data->cmd_index].name,
-											USBH_EC20_GetLastReceivedDataSize(phost));
+											USBH_EC20_GetLastReceivedDataSize(phost),
+											app_data->timeout_times);
 			
 			for(int i = 0; i < USBH_EC20_GetLastReceivedDataSize(phost); ++i)
 			{
