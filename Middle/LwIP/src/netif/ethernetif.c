@@ -204,7 +204,7 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW; 
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 	/* LAN8742A_PHY_ADDRESS is 0 */
-	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_14,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_15,GPIO_PIN_RESET);
 	
 
 	/* Configure PB14 */
